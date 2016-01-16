@@ -29,12 +29,6 @@ public class Message
         ACTION
     }
 
-    public static final int ACTION_TYPE_NONE = 0;
-    public static final int ACTION_TYPE_JUMP = 1;
-    public static final int ACTION_TYPE_TAKE_OFF = 2;
-    public static final int ACTION_TYPE_LAND = 3;
-
-
     public static MESSAGE_TYPE getMessageType(MessageEvent messageEvent){
         MESSAGE_TYPE messageType = MESSAGE_TYPE.ACC;
         if (messageEvent != null)

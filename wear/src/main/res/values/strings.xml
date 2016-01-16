@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">DronesWear</string>
     <string name="hello_world">Hello World!</string>
+    <string name="jump_action">JUMP</string>
+    <string name="take_off_action">TAKE OFF</string>
+    <string name="land_action">LAND</string>
+    <string name="action_sent">Action sent</string>
 </resources>

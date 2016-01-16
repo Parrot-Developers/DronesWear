@@ -24,6 +24,7 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.sousoum.shared.AccelerometerData;
+import com.sousoum.shared.ActionType;
 import com.sousoum.shared.Message;
 
 import java.text.SimpleDateFormat;
@@ -45,13 +46,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private Handler mHandler;
     private SensorManager mManager;
 
-    private Object mAcceleroLock;
-    private float mGyroData[]={0,0,0};
+    private final Object mAcceleroLock = new Object();
+    private final Object mNodeLock = new Object();
+
     private float mAccData[]={0,0,0};
 
     private GoogleApiClient mGoogleApiClient;
 
-    private Object mNodeLock;
     private ArrayList<Node> mNodes;
 
     @Override
@@ -66,8 +67,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mActionBt = (Button) findViewById(R.id.button);
 
         mNodes = new ArrayList<>();
-        mAcceleroLock = new Object();
-        mNodeLock = new Object();
 
         mManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
@@ -109,10 +108,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         super.onResume();
 
         mManager.registerListener(this, mManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
-        mManager.registerListener(this, mManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_UI);
 
         mGoogleApiClient.connect();
-
     }
 
     @Override
@@ -152,32 +149,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event)
-    {
-        switch (event.sensor.getType()) {
-            case Sensor.TYPE_ACCELEROMETER:
-                synchronized (mAcceleroLock)
-                {
-                    mAccData[0] = event.values[0];
-                    mAccData[1] = event.values[1];
-                    mAccData[2] = event.values[2];
-                }
-                break;
-            case Sensor.TYPE_GYROSCOPE:
-                mGyroData[0] = event.values[0];
-                mGyroData[1] = event.values[1];
-                mGyroData[2] = event.values[2];
-                break;
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy)
-    {
-
-    }
-
     private void sendSensorValues()
     {
         synchronized (mNodeLock) {
@@ -193,6 +164,80 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
+    private void onActionTypeChanged(int actionType)
+    {
+        switch (actionType) {
+            case ActionType.ACTION_TYPE_NONE:
+                mActionBt.setVisibility(View.GONE);
+                break;
+            case ActionType.ACTION_TYPE_JUMP:
+                mActionBt.setText(R.string.jump_action);
+                mActionBt.setVisibility(View.VISIBLE);
+                break;
+            case ActionType.ACTION_TYPE_TAKE_OFF:
+                mActionBt.setText(R.string.take_off_action);
+                mActionBt.setVisibility(View.VISIBLE);
+                break;
+            case ActionType.ACTION_TYPE_LAND:
+                mActionBt.setText(R.string.land_action);
+                mActionBt.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+    public void onButtonClicked(View view)
+    {
+        synchronized (mNodeLock) {
+            if (!mNodes.isEmpty()) {
+                Message.sendActionMessage(mNodes, mGoogleApiClient);
+
+                Intent intent = new Intent(this, ConfirmationActivity.class);
+                intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                        ConfirmationActivity.SUCCESS_ANIMATION);
+                intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
+                        getString(R.string.action_sent));
+                startActivity(intent);
+            }
+        }
+    }
+
+    //region SensorEventListener
+    @Override
+    public void onSensorChanged(SensorEvent event)
+    {
+        switch (event.sensor.getType()) {
+            case Sensor.TYPE_ACCELEROMETER:
+                synchronized (mAcceleroLock)
+                {
+                    mAccData[0] = event.values[0];
+                    mAccData[1] = event.values[1];
+                    mAccData[2] = event.values[2];
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy)
+    {
+
+    }
+    //endregion SensorEventListener
+
+    //region DataApi.DataListener
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent)
+    {
+        switch (Message.getMessageType(messageEvent)) {
+            case ACTION_TYPE:
+                int productAction = Message.decodeActionTypeMessage(messageEvent);
+                onActionTypeChanged(productAction);
+                break;
+        }
+    }
+    //endregion DataApi.DataListener
+
+    //region GoogleApiClient.ConnectionCallbacks
     @Override
     public void onConnected(Bundle bundle)
     {
@@ -219,47 +264,17 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     public void onConnectionSuspended(int i)
     {
-
+        Log.i(TAG, "onConnectionSuspended");
     }
+    //endregion GoogleApiClient.ConnectionCallbacks
 
-    @Override
-    public void onMessageReceived(MessageEvent messageEvent)
-    {
-        switch (Message.getMessageType(messageEvent)) {
-            case ACTION_TYPE:
-                int productAction = Message.decodeActionTypeMessage(messageEvent);
-                onActionTypeChanged(productAction);
-                break;
-        }
-    }
-
-    private void onActionTypeChanged(int actionType)
-    {
-        switch (actionType) {
-            case Message.ACTION_TYPE_NONE:
-                mActionBt.setVisibility(View.GONE);
-                break;
-            case Message.ACTION_TYPE_JUMP:
-                mActionBt.setText("JUMP");
-                mActionBt.setVisibility(View.VISIBLE);
-                break;
-            case Message.ACTION_TYPE_TAKE_OFF:
-                mActionBt.setText("TAKE OFF");
-                mActionBt.setVisibility(View.VISIBLE);
-                break;
-            case Message.ACTION_TYPE_LAND:
-                mActionBt.setText("LAND");
-                mActionBt.setVisibility(View.VISIBLE);
-                break;
-        }
-    }
-
+    //region DataAPI
     @Override
     public void onPeerConnected(Node node)
     {
         synchronized (mNodeLock)
         {
-            Log.e(TAG, "Adding node = " + node);
+            Log.i(TAG, "Adding node = " + node);
             mNodes.add(node);
         }
     }
@@ -269,24 +284,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     {
         synchronized (mNodeLock)
         {
-            Log.e(TAG, "removing node = " + node);
+            Log.i(TAG, "removing node = " + node);
             mNodes.remove(node);
         }
     }
-
-    public void onButtonClicked(View view)
-    {
-        synchronized (mNodeLock) {
-            if (!mNodes.isEmpty()) {
-                Message.sendActionMessage(mNodes, mGoogleApiClient);
-
-                Intent intent = new Intent(this, ConfirmationActivity.class);
-                intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
-                        ConfirmationActivity.SUCCESS_ANIMATION);
-                intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
-                        "Action sent");
-                startActivity(intent);
-            }
-        }
-    }
+    //endregion DataAPI
 }
