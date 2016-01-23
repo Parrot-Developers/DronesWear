@@ -67,8 +67,9 @@
                 android:background="@drawable/instruction_bg"/>
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/instruction_margin"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
                 android:text="@string/timeout_instruction_1"
                 android:textColor="@color/secondary_text"/>
         </LinearLayout>
@@ -89,8 +90,9 @@
                 android:background="@drawable/instruction_bg"/>
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/instruction_margin"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
                 android:text="@string/timeout_instruction_2"
                 android:textColor="@color/secondary_text"/>
         </LinearLayout>
@@ -111,8 +113,9 @@
                 android:background="@drawable/instruction_bg"/>
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/instruction_margin"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
                 android:text="@string/timeout_instruction_3"
                 android:textColor="@color/secondary_text"/>
         </LinearLayout>
@@ -133,8 +136,9 @@
                 android:background="@drawable/instruction_bg"/>
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/instruction_margin"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
                 android:text="@string/timeout_instruction_4"
                 android:textColor="@color/secondary_text"/>
         </LinearLayout>
@@ -155,9 +159,33 @@
                 android:background="@drawable/instruction_bg"/>
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/instruction_margin"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
                 android:text="@string/timeout_instruction_5"
+                android:textColor="@color/secondary_text"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/timeout_helper_6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/instruction_vertical_margin"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="@dimen/instruction_number_width_height"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:text="6"
+                android:textColor="@color/secondary_text"
+                android:layout_marginStart="@dimen/instruction_number_margin_left"
+                android:gravity="center"
+                android:background="@drawable/instruction_bg"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/instruction_number_width_height"
+                android:gravity="center_vertical"
+                android:layout_marginStart="@dimen/instruction_margin"
+                android:text="@string/timeout_instruction_6"
                 android:textColor="@color/secondary_text"/>
         </LinearLayout>
     </LinearLayout>

@@ -27,22 +27,31 @@ public class ParrotJumpingDrone extends ParrotDrone
     @Override
     public void pilotWithAcceleroData(AccelerometerData accelerometerData)
     {
-        byte speedVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccY() / 9.0) * 50))));
-        byte turnVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccX() / 9.0) * 50))));
-        Log.i(TAG, "speed = " + speedVal + " | turn = " + turnVal);
-        mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 1, speedVal, turnVal);
+        if (mDeviceController != null)
+        {
+            byte speedVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccY() / 9.0) * 50))));
+            byte turnVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccX() / 9.0) * 50))));
+            Log.i(TAG, "speed = " + speedVal + " | turn = " + turnVal);
+            mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 1, speedVal, turnVal);
+        }
     }
 
     @Override
     public void stopPiloting()
     {
-        mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0);
+        if (mDeviceController != null)
+        {
+            mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0);
+        }
     }
 
     @Override
     public void sendAction()
     {
-        mDeviceController.getFeatureJumpingSumo().sendAnimationsJump(ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_ENUM.ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_HIGH);
+        if (mDeviceController != null)
+        {
+            mDeviceController.getFeatureJumpingSumo().sendAnimationsJump(ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_ENUM.ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_HIGH);
+        }
     }
 
     @Override

@@ -12,18 +12,16 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.parrot.arsdk.ARSDK;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
+import com.parrot.arsdk.arsal.ARSALPrint;
+import com.parrot.arsdk.arsal.ARSAL_PRINT_LEVEL_ENUM;
 import com.sousoum.discovery.Discoverer;
 import com.sousoum.drone.ParrotDrone;
 import com.sousoum.drone.ParrotDroneFactory;
@@ -34,7 +32,7 @@ import com.sousoum.shared.Message;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, NodeApi.NodeListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener
 {
     private static final String TAG = "MobileMainActivity";
 
@@ -43,11 +41,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GoogleApiClient mGoogleApiClient;
 
     private final Object mDroneLock = new Object();
-    private final Object mNodeLock = new Object();
 
     private ParrotDrone mDrone;
-
-    private ArrayList<Node> mNodes;
 
     private View mTimeoutHelper;
     private Button mEmergencyBt;
@@ -56,9 +51,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private Handler mHandler;
     private Runnable mAnimRunnable;
+    private Runnable mReconnectRunnable;
 
     static {
         ARSDK.loadSDKLibs();
+        ARSALPrint.setMinimumLogLevel(ARSAL_PRINT_LEVEL_ENUM.ARSAL_PRINT_ERROR);
     }
 
     private boolean mUseWatchAccelero;
@@ -95,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
 
-        mNodes = new ArrayList<>();
 
         mDiscoverer = new Discoverer(this);
         mDiscoverer.addListener(this);
@@ -107,6 +103,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             public void run()
             {
                 startBounceAnimation();
+            }
+        };
+
+        mReconnectRunnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (mDiscoverer != null) {
+                    mDiscoverer.startDiscovering();
+                    mTextView.setText(R.string.discovering);
+                }
             }
         };
     }
@@ -129,16 +137,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mGoogleApiClient.connect();
 
         mDiscoverer.setup();
+        mTextView.setText(R.string.discovering);
     }
 
 
     private void sendActionType(int actionType)
     {
-        synchronized (mNodeLock) {
-            if (!mNodes.isEmpty()) {
-                Message.sendActionTypeMessage(actionType, mGoogleApiClient);
-            }
-        }
+        Message.sendActionTypeMessage(actionType, mGoogleApiClient);
     }
 
     //region ParrotDroneListener
@@ -156,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     mDrone = null;
                 }
                 mTextView.setText(R.string.device_disconnected);
-                mDiscoverer.startDiscovering();
+                mHandler.postDelayed(mReconnectRunnable, 5000);
                 break;
         }
     }
@@ -187,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (mDrone == null)
         {
             mTextView.setText(String.format(getString(R.string.connecting_to_device), deviceService.getName()));
-
+            mDiscoverer.stopDiscovering();
             synchronized (mDroneLock)
             {
                 mDrone = ParrotDroneFactory.createParrotDrone(deviceService, this);
@@ -205,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
     //endregion DiscovererListener
 
+    //region Animations
     private void startAnimation() {
         ArrayList<View> layoutArray = new ArrayList<>();
         layoutArray.add(findViewById(R.id.timeout_helper_1));
@@ -212,6 +218,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         layoutArray.add(findViewById(R.id.timeout_helper_3));
         layoutArray.add(findViewById(R.id.timeout_helper_4));
         layoutArray.add(findViewById(R.id.timeout_helper_5));
+        layoutArray.add(findViewById(R.id.timeout_helper_6));
 
         ObjectAnimator animation;
 
@@ -236,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         layoutArray.add(findViewById(R.id.timeout_helper_3));
         layoutArray.add(findViewById(R.id.timeout_helper_4));
         layoutArray.add(findViewById(R.id.timeout_helper_5));
+        layoutArray.add(findViewById(R.id.timeout_helper_6));
 
         ObjectAnimator animation;
         int translationX = 30;
@@ -262,8 +270,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             layoutIdx++;
         }
 
-        mHandler.postDelayed(mAnimRunnable, 5000);
+        mHandler.postDelayed(mAnimRunnable, 10000);
     }
+    //endregion Animations
 
     //region Button Listeners
     private void onEmergencyClicked() {
@@ -292,7 +301,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             DataItem dataItem = event.getDataItem();
             Message.MESSAGE_TYPE messageType = Message.getMessageType(dataItem);
 
-            if (event.getType() == DataEvent.TYPE_CHANGED) {
+            if (event.getType() == DataEvent.TYPE_DELETED) {
+                switch (messageType)
+                {
+                    case ACC:
+                        Log.e(TAG, "No piloting received");
+                        synchronized (mDroneLock)
+                        {
+                            if (mDrone != null && mUseWatchAccelero)
+                            {
+                                mDrone.stopPiloting();
+                            }
+
+                        }
+                        break;
+                }
+            } else if (event.getType() == DataEvent.TYPE_CHANGED) {
                 switch (messageType) {
                     case ACC:
                         synchronized (mDroneLock) {
@@ -326,25 +350,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(Bundle bundle)
     {
-        Wearable.NodeApi.addListener(mGoogleApiClient, this);
-        //Wearable.MessageApi.addListener(mGoogleApiClient, this);
         Wearable.DataApi.addListener(mGoogleApiClient, this);
-
-        PendingResult<NodeApi.GetConnectedNodesResult> results = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient);
-        results.setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>()
-        {
-            @Override
-            public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult)
-            {
-                if (getConnectedNodesResult.getStatus().isSuccess())
-                {
-                    synchronized (mNodeLock)
-                    {
-                        mNodes.addAll(getConnectedNodesResult.getNodes());
-                    }
-                }
-            }
-        });
     }
 
     @Override
@@ -353,26 +359,4 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Log.i(TAG, "onConnectionSuspended");
     }
     //endregion GoogleApiClient.ConnectionCallbacks
-
-    //region DataAPI
-    @Override
-    public void onPeerConnected(Node node)
-    {
-        synchronized (mNodeLock)
-        {
-            Log.i(TAG, "Adding node = " + node);
-            mNodes.add(node);
-        }
-    }
-
-    @Override
-    public void onPeerDisconnected(Node node)
-    {
-        synchronized (mNodeLock)
-        {
-            Log.i(TAG, "removing node = " + node);
-            mNodes.remove(node);
-        }
-    }
-    //endregion DataAPI
 }

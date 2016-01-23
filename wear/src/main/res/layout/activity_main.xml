@@ -10,16 +10,28 @@
     tools:deviceIds="wear"
     android:background="@color/primary_light">
 
-    <Button android:id="@+id/button"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Click me!"
-            android:textColor="@color/text_on_button"
-            android:layout_margin="35dp"
-            android:layout_gravity="center"
-            android:background="@drawable/button_res"
-            android:onClick="onButtonClicked"
-            android:visibility="gone"/>
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@color/text_on_button"
+        android:layout_margin="35dp"
+        android:layout_gravity="center"
+        android:background="@drawable/button_res"
+        android:onClick="onButtonClicked"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/textview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@color/secondary_text"
+        android:text="@string/connecting"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:layout_margin="35dp"
+        android:gravity="center"
+        android:visibility="visible"/>
 
     <TextView
         android:id="@+id/clock"

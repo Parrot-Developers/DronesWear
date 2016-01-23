@@ -26,10 +26,18 @@ import java.util.List;
 public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiverDelegate
 {
     private static final String TAG = "Discoverer";
-    private static final int TIMEOUT_DELAY_MS = 5000;
+    private static final int TIMEOUT_DELAY_MS = 8000;
 
     public interface DiscovererListener {
+        /**
+         * Called when a Parrot device has been found on the network
+         * @param deviceService The device found
+         */
         void onServiceDiscovered(ARDiscoveryDeviceService deviceService);
+
+        /**
+         * Called when the discovery took too long
+         */
         void onDiscoveryTimedOut();
     }
     private List<DiscovererListener> mListeners;
@@ -87,6 +95,7 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         if (mArdiscoveryService != null)
         {
             Log.i(TAG, "Start discovering");
+            onServicesDevicesListUpdated();
             mArdiscoveryService.startWifiDiscovering();
             mHandler.postDelayed(mTimeoutRunnable, TIMEOUT_DELAY_MS);
         }

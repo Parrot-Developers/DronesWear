@@ -29,31 +29,40 @@ public class ParrotFlyingDrone extends ParrotDrone
     @Override
     public void pilotWithAcceleroData(AccelerometerData accelerometerData)
     {
-        byte pitchVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccY() / 9.0) * 50))));
-        byte rollVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccX() / 9.0) * 50))));
-        Log.w(TAG, "pitch = " + pitchVal + " | roll = " + rollVal);
-        mDeviceController.getFeatureARDrone3().setPilotingPCMDFlag((byte) 1);
-        mDeviceController.getFeatureARDrone3().setPilotingPCMDRoll(rollVal);
-        mDeviceController.getFeatureARDrone3().setPilotingPCMDPitch(pitchVal);
+        if (mDeviceController != null)
+        {
+            byte pitchVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccY() / 9.0) * 50))));
+            byte rollVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccX() / 9.0) * 50))));
+            Log.w(TAG, "pitch = " + pitchVal + " | roll = " + rollVal);
+            mDeviceController.getFeatureARDrone3().setPilotingPCMDFlag((byte) 1);
+            mDeviceController.getFeatureARDrone3().setPilotingPCMDRoll(rollVal);
+            mDeviceController.getFeatureARDrone3().setPilotingPCMDPitch(pitchVal);
+        }
     }
 
     @Override
     public void stopPiloting()
     {
-        mDeviceController.getFeatureARDrone3().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
+        if (mDeviceController != null)
+        {
+            mDeviceController.getFeatureARDrone3().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
+        }
     }
 
     @Override
     public void sendAction()
     {
-        switch (mCurrentAction)
+        if (mDeviceController != null)
         {
-            case ActionType.ACTION_TYPE_TAKE_OFF:
-                mDeviceController.getFeatureARDrone3().sendPilotingTakeOff();
-                break;
-            case ActionType.ACTION_TYPE_LAND:
-                mDeviceController.getFeatureARDrone3().sendPilotingLanding();
-                break;
+            switch (mCurrentAction)
+            {
+                case ActionType.ACTION_TYPE_TAKE_OFF:
+                    mDeviceController.getFeatureARDrone3().sendPilotingTakeOff();
+                    break;
+                case ActionType.ACTION_TYPE_LAND:
+                    mDeviceController.getFeatureARDrone3().sendPilotingLanding();
+                    break;
+            }
         }
     }
 

@@ -22,19 +22,16 @@ import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
 import com.sousoum.shared.Message;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, NodeApi.NodeListener, DataApi.DataListener
+public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, DataApi.DataListener
 {
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
@@ -44,18 +41,17 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private BoxInsetLayout mContainerView;
     private TextView mClockView;
     private Button mActionBt;
+    private TextView mTextview;
 
     private Handler mHandler;
+    private Runnable mSendAccRunnable;
     private SensorManager mManager;
 
     private final Object mAcceleroLock = new Object();
-    private final Object mNodeLock = new Object();
 
     private AccelerometerData mAccData;
 
     private GoogleApiClient mGoogleApiClient;
-
-    private ArrayList<Node> mNodes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -67,8 +63,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mContainerView = (BoxInsetLayout) findViewById(R.id.container);
         mClockView = (TextView) findViewById(R.id.clock);
         mActionBt = (Button) findViewById(R.id.button);
-
-        mNodes = new ArrayList<>();
+        mTextview = (TextView) findViewById(R.id.textview);
 
         mAccData = new AccelerometerData(0, 0, 0);
 
@@ -77,7 +72,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
         mHandler = new Handler();
 
-        mHandler.postDelayed(new Runnable()
+        mSendAccRunnable = new Runnable()
         {
             @Override
             public void run()
@@ -85,10 +80,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                 sendSensorValues();
 
-                mHandler.postDelayed(this, 250);
+                mHandler.postDelayed(mSendAccRunnable, 100);
 
             }
-        }, 500);
+        };
+
+        mHandler.postDelayed(mSendAccRunnable, 500);
     }
 
     @Override
@@ -102,9 +99,19 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     protected void onPause(){
         super.onPause();
-        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-            mGoogleApiClient.disconnect();
-        }
+
+        PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Message.sendEmptyAcceleroMessage(mGoogleApiClient);
+        pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>()
+        {
+            @Override
+            public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult)
+            {
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
+                {
+                    mGoogleApiClient.disconnect();
+                }
+            }
+        });
     }
 
     @Override
@@ -141,27 +148,23 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     {
         if (isAmbient())
         {
-            mContainerView.setBackgroundColor(getResources().getColor(android.R.color.black));
+            mContainerView.setBackgroundResource(android.R.color.black);
             mClockView.setVisibility(View.VISIBLE);
 
             mClockView.setText(AMBIENT_DATE_FORMAT.format(new Date()));
         }
         else
         {
-            mContainerView.setBackgroundResource(R.color.accent);
+            mContainerView.setBackgroundResource(R.color.primary_light);
             mClockView.setVisibility(View.GONE);
         }
     }
 
     private void sendSensorValues()
     {
-        synchronized (mNodeLock) {
-            if (!mNodes.isEmpty()) {
-                synchronized (mAcceleroLock)
-                {
-                    Message.sendAcceleroMessage(mAccData, mGoogleApiClient);
-                }
-            }
+        synchronized (mAcceleroLock)
+        {
+            Message.sendAcceleroMessage(mAccData, mGoogleApiClient);
         }
     }
 
@@ -170,36 +173,36 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         switch (actionType) {
             case ActionType.ACTION_TYPE_NONE:
                 mActionBt.setVisibility(View.GONE);
+                mTextview.setVisibility(View.VISIBLE);
                 break;
             case ActionType.ACTION_TYPE_JUMP:
                 mActionBt.setText(R.string.jump_action);
                 mActionBt.setVisibility(View.VISIBLE);
+                mTextview.setVisibility(View.GONE);
                 break;
             case ActionType.ACTION_TYPE_TAKE_OFF:
                 mActionBt.setText(R.string.take_off_action);
                 mActionBt.setVisibility(View.VISIBLE);
+                mTextview.setVisibility(View.GONE);
                 break;
             case ActionType.ACTION_TYPE_LAND:
                 mActionBt.setText(R.string.land_action);
                 mActionBt.setVisibility(View.VISIBLE);
+                mTextview.setVisibility(View.GONE);
                 break;
         }
     }
 
     public void onButtonClicked(View view)
     {
-        synchronized (mNodeLock) {
-            if (!mNodes.isEmpty()) {
-                Message.sendActionMessage(mGoogleApiClient);
+        Message.sendActionMessage(mGoogleApiClient);
 
-                Intent intent = new Intent(this, ConfirmationActivity.class);
-                intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
-                        ConfirmationActivity.SUCCESS_ANIMATION);
-                intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
-                        getString(R.string.action_sent));
-                startActivity(intent);
-            }
-        }
+        Intent intent = new Intent(this, ConfirmationActivity.class);
+        intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                ConfirmationActivity.SUCCESS_ANIMATION);
+        intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
+                getString(R.string.action_sent));
+        startActivity(intent);
     }
 
     //region SensorEventListener
@@ -250,25 +253,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     public void onConnected(Bundle bundle)
     {
-        Wearable.NodeApi.addListener(mGoogleApiClient, this);
-        //Wearable.MessageApi.addListener(mGoogleApiClient, this);
         Wearable.DataApi.addListener(mGoogleApiClient, this);
-
-        PendingResult<NodeApi.GetConnectedNodesResult> results = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient);
-        results.setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>()
-        {
-            @Override
-            public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult)
-            {
-                if (getConnectedNodesResult.getStatus().isSuccess())
-                {
-                    synchronized (mNodeLock)
-                    {
-                        mNodes.addAll(getConnectedNodesResult.getNodes());
-                    }
-                }
-            }
-        });
     }
 
     @Override
@@ -277,26 +262,4 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         Log.i(TAG, "onConnectionSuspended");
     }
     //endregion GoogleApiClient.ConnectionCallbacks
-
-    //region DataAPI
-    @Override
-    public void onPeerConnected(Node node)
-    {
-        synchronized (mNodeLock)
-        {
-            Log.i(TAG, "Adding node = " + node);
-            mNodes.add(node);
-        }
-    }
-
-    @Override
-    public void onPeerDisconnected(Node node)
-    {
-        synchronized (mNodeLock)
-        {
-            Log.i(TAG, "removing node = " + node);
-            mNodes.remove(node);
-        }
-    }
-    //endregion DataAPI
 }

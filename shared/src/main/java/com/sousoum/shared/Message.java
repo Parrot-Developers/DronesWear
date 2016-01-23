@@ -1,5 +1,7 @@
 package com.sousoum.shared;
 
+import android.net.Uri;
+
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.wearable.DataApi;
@@ -18,6 +20,8 @@ public class Message
     private static final String ACTION_TYPE_PATH = "/at";
     private static final String ACTION_PATH = "/a";
     private static final String VALUE_STR = "value";
+
+    private static Uri acceleroMessageUri;
 
     public enum MESSAGE_TYPE {
         UNKNOWN,
@@ -61,6 +65,7 @@ public class Message
 
     public static PendingResult<DataApi.DataItemResult> sendAcceleroMessage(AccelerometerData accelerometerData, GoogleApiClient googleApiClient) {
         PutDataMapRequest dataMapRequest = PutDataMapRequest.create(ACC_PATH);
+        acceleroMessageUri = dataMapRequest.getUri();
         DataMap dataMap = dataMapRequest.getDataMap();
         //Data set
         dataMap.putFloatArray(VALUE_STR, new float[]{accelerometerData.getAccX(), accelerometerData.getAccY(), accelerometerData.getAccZ()});
@@ -68,6 +73,13 @@ public class Message
         // Data Push
         PutDataRequest request = dataMapRequest.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult = Wearable.DataApi.putDataItem(googleApiClient, request);
+
+        return pendingResult;
+    }
+
+    public static PendingResult<DataApi.DeleteDataItemsResult> sendEmptyAcceleroMessage(GoogleApiClient googleApiClient) {
+        PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Wearable.DataApi.deleteDataItems(googleApiClient, acceleroMessageUri);
+
 
         return pendingResult;
     }
