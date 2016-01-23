@@ -14,8 +14,10 @@ import android.widget.TextView;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
@@ -32,7 +34,7 @@ import com.sousoum.shared.Message;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, MessageApi.MessageListener, NodeApi.NodeListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, NodeApi.NodeListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener
 {
     private static final String TAG = "MobileMainActivity";
 
@@ -134,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     {
         synchronized (mNodeLock) {
             if (!mNodes.isEmpty()) {
-                Message.sendActionTypeMessage(actionType, mNodes, mGoogleApiClient);
+                Message.sendActionTypeMessage(actionType, mGoogleApiClient);
             }
         }
     }
@@ -284,26 +286,38 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     //region DataApi.DataListener
     @Override
-    public void onMessageReceived(MessageEvent messageEvent)
-    {
-        switch (Message.getMessageType(messageEvent)) {
-            case ACC:
-                synchronized (mDroneLock) {
-                if (mDrone != null && mUseWatchAccelero)
-                {
-                    Log.i(TAG, "Message received : " + messageEvent);
-                    AccelerometerData accelerometerData = Message.decodeAcceleroMessage(messageEvent);
-                    mDrone.pilotWithAcceleroData(accelerometerData);
+    public void onDataChanged(DataEventBuffer dataEvents) {
+        for (DataEvent event : dataEvents) {
+
+            DataItem dataItem = event.getDataItem();
+            Message.MESSAGE_TYPE messageType = Message.getMessageType(dataItem);
+
+            if (event.getType() == DataEvent.TYPE_CHANGED) {
+                switch (messageType) {
+                    case ACC:
+                        synchronized (mDroneLock) {
+                            if (mDrone != null && mUseWatchAccelero)
+                            {
+                                AccelerometerData accelerometerData = Message.decodeAcceleroMessage(dataItem);
+                                if (accelerometerData != null)
+                                {
+                                    mDrone.pilotWithAcceleroData(accelerometerData);
+                                } else {
+                                    mDrone.stopPiloting();
+                                }
+                            }
+
+                        }
+                        break;
+                    case ACTION:
+                        if (mDrone != null)
+                        {
+                            mDrone.sendAction();
+                        }
+                        break;
                 }
 
-                }
-                break;
-            case ACTION:
-                if (mDrone != null)
-                {
-                    mDrone.sendAction();
-                }
-                break;
+            }
         }
     }
     //endregion DataApi.DataListener
@@ -313,7 +327,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnected(Bundle bundle)
     {
         Wearable.NodeApi.addListener(mGoogleApiClient, this);
-        Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        //Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        Wearable.DataApi.addListener(mGoogleApiClient, this);
 
         PendingResult<NodeApi.GetConnectedNodesResult> results = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient);
         results.setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>()

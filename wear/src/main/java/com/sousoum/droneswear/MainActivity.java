@@ -18,8 +18,10 @@ import android.widget.TextView;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
@@ -32,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, MessageApi.MessageListener, NodeApi.NodeListener
+public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, NodeApi.NodeListener, DataApi.DataListener
 {
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
@@ -159,7 +161,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     accelerometerData = new AccelerometerData(
                             mAccData[0], mAccData[1], mAccData[2]);
                 }
-                Message.sendAcceleroMessage(accelerometerData, mNodes, mGoogleApiClient);
+                Message.sendAcceleroMessage(accelerometerData, mGoogleApiClient);
             }
         }
     }
@@ -189,7 +191,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     {
         synchronized (mNodeLock) {
             if (!mNodes.isEmpty()) {
-                Message.sendActionMessage(mNodes, mGoogleApiClient);
+                Message.sendActionMessage(mGoogleApiClient);
 
                 Intent intent = new Intent(this, ConfirmationActivity.class);
                 intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
@@ -226,13 +228,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     //region DataApi.DataListener
     @Override
-    public void onMessageReceived(MessageEvent messageEvent)
-    {
-        switch (Message.getMessageType(messageEvent)) {
-            case ACTION_TYPE:
-                int productAction = Message.decodeActionTypeMessage(messageEvent);
-                onActionTypeChanged(productAction);
-                break;
+    public void onDataChanged(DataEventBuffer dataEvents) {
+        for (DataEvent event : dataEvents) {
+            if (event.getType() == DataEvent.TYPE_DELETED) {
+                Log.d("TAG", "DataItem deleted: " + event.getDataItem().getUri());
+            } else if (event.getType() == DataEvent.TYPE_CHANGED) {
+                DataItem dataItem = event.getDataItem();
+                switch (Message.getMessageType(dataItem)) {
+                    case ACTION_TYPE:
+                        int productAction = Message.decodeActionTypeMessage(dataItem);
+                        onActionTypeChanged(productAction);
+                        break;
+                }
+
+            }
         }
     }
     //endregion DataApi.DataListener
@@ -242,7 +251,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onConnected(Bundle bundle)
     {
         Wearable.NodeApi.addListener(mGoogleApiClient, this);
-        Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        //Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        Wearable.DataApi.addListener(mGoogleApiClient, this);
 
         PendingResult<NodeApi.GetConnectedNodesResult> results = Wearable.NodeApi.getConnectedNodes(mGoogleApiClient);
         results.setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>()
