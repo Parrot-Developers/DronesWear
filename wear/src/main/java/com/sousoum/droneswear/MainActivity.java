@@ -51,7 +51,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private final Object mAcceleroLock = new Object();
     private final Object mNodeLock = new Object();
 
-    private float mAccData[]={0,0,0};
+    private AccelerometerData mAccData;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -69,6 +69,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mActionBt = (Button) findViewById(R.id.button);
 
         mNodes = new ArrayList<>();
+
+        mAccData = new AccelerometerData(0, 0, 0);
 
         mManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
@@ -155,13 +157,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     {
         synchronized (mNodeLock) {
             if (!mNodes.isEmpty()) {
-                AccelerometerData accelerometerData;
                 synchronized (mAcceleroLock)
                 {
-                    accelerometerData = new AccelerometerData(
-                            mAccData[0], mAccData[1], mAccData[2]);
+                    Message.sendAcceleroMessage(mAccData, mGoogleApiClient);
                 }
-                Message.sendAcceleroMessage(accelerometerData, mGoogleApiClient);
             }
         }
     }
@@ -211,9 +210,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             case Sensor.TYPE_ACCELEROMETER:
                 synchronized (mAcceleroLock)
                 {
-                    mAccData[0] = event.values[0];
-                    mAccData[1] = event.values[1];
-                    mAccData[2] = event.values[2];
+                    mAccData.setAccData(
+                            event.values[0],
+                            event.values[1],
+                            event.values[2]);
                 }
                 break;
         }

@@ -5,34 +5,37 @@ package com.sousoum.shared;
  */
 public class AccelerometerData
 {
-    private float mAccX;
-    private float mAccY;
-    private float mAccZ;
+    private float mAccData[];
 
     public AccelerometerData(float accX, float accY, float accZ) {
-        mAccX = accX;
-        mAccY = accY;
-        mAccZ = accZ;
+        mAccData = new float[3];
+        setAccData(accX, accY, accZ);
     }
 
     public float getAccX()
     {
-        return mAccX;
+        return mAccData[0];
     }
 
     public float getAccY()
     {
-        return mAccY;
+        return mAccData[1];
     }
 
     public float getAccZ()
     {
-        return mAccZ;
+        return mAccData[2];
+    }
+
+    public void setAccData(float accX, float accY, float accZ) {
+        mAccData[0] = accX;
+        mAccData[1] = accY;
+        mAccData[2] = accZ;
     }
 
     @Override
     public String toString()
     {
-        return "Accelero = [" + mAccX + ", " + mAccY + ", " + mAccZ + "]";
+        return "Accelero = [" + getAccX() + ", " + getAccY() + ", " + getAccZ() + "]";
     }
 }
