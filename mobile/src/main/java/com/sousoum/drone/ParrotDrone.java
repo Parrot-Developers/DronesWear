@@ -27,23 +27,25 @@ import java.util.List;
 /**
  * Created by d.bertrand on 13/01/16.
  */
-public abstract class ParrotDrone implements ARDeviceControllerListener
-{
+public abstract class ParrotDrone implements ARDeviceControllerListener {
     private static final String TAG = "ParrotDrone";
 
     public interface ParrotDroneListener {
         /**
          * Called when the connection to the drone changes
+         *
          * @param state the state of the drone
          */
         void onDroneConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state);
 
         /**
          * Called when the action linked to the drone changes
+         *
          * @param action the action type (@see ActionType)
          */
         void onDroneActionChanged(int action);
     }
+
     private final List<ParrotDroneListener> mListeners;
 
     protected ARDeviceController mDeviceController;
@@ -51,7 +53,7 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
     protected final Handler mHandler;
 
     protected int mCurrentAction;
-    
+
     public ParrotDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx) {
 
         mListeners = new ArrayList<>();
@@ -59,13 +61,11 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
 
         ARDiscoveryDevice discoveryDevice = createDiscoveryDevice(deviceService);
         ARDeviceController deviceController = null;
-        if (discoveryDevice != null)
-        {
+        if (discoveryDevice != null) {
             deviceController = createDeviceController(discoveryDevice);
         }
 
-        if (deviceController != null)
-        {
+        if (deviceController != null) {
             deviceController.start();
         }
     }
@@ -84,6 +84,7 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
 
     /**
      * Make the drone move according to the given data
+     *
      * @param accelerometerData the data taken from the accelerometer
      */
     public abstract void pilotWithAcceleroData(AccelerometerData accelerometerData);
@@ -103,20 +104,16 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
         notifyActionChanged(action);
     }
 
-    private ARDiscoveryDevice createDiscoveryDevice(@NonNull ARDiscoveryDeviceService service)
-    {
+    private ARDiscoveryDevice createDiscoveryDevice(@NonNull ARDiscoveryDeviceService service) {
         ARDiscoveryDevice device = null;
-        try
-        {
+        try {
             device = new ARDiscoveryDevice();
 
             ARDiscoveryDeviceNetService netDeviceService = (ARDiscoveryDeviceNetService) service.getDevice();
             ARDISCOVERY_PRODUCT_ENUM productType = ARDiscoveryService.getProductFromProductID(service.getProductID());
 
             device.initWifi(productType, netDeviceService.getName(), netDeviceService.getIp(), netDeviceService.getPort());
-        }
-        catch (ARDiscoveryException e)
-        {
+        } catch (ARDiscoveryException e) {
             e.printStackTrace();
             Log.e(TAG, "Error: " + e.getError());
         }
@@ -124,17 +121,13 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
         return device;
     }
 
-    private ARDeviceController createDeviceController(@NonNull ARDiscoveryDevice discoveryDevice)
-    {
+    private ARDeviceController createDeviceController(@NonNull ARDiscoveryDevice discoveryDevice) {
         ARDeviceController deviceController = null;
-        try
-        {
+        try {
             deviceController = new ARDeviceController(discoveryDevice);
 
             deviceController.addListener(this);
-        }
-        catch (ARControllerException e)
-        {
+        } catch (ARControllerException e) {
             e.printStackTrace();
         }
 
@@ -143,60 +136,47 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
 
     //region ARDeviceControllerListener
     @Override
-    public void onStateChanged(ARDeviceController deviceController, final ARCONTROLLER_DEVICE_STATE_ENUM newState, ARCONTROLLER_ERROR_ENUM error)
-    {
-        mHandler.post(new Runnable()
-        {
+    public void onStateChanged(ARDeviceController deviceController, final ARCONTROLLER_DEVICE_STATE_ENUM newState, ARCONTROLLER_ERROR_ENUM error) {
+        mHandler.post(new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 notifyConnectionChanged(newState);
             }
         });
 
-        if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_STOPPED)
-        {
+        if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_STOPPED) {
             mDeviceController = null;
 
-            mHandler.post(new Runnable()
-            {
+            mHandler.post(new Runnable() {
                 @Override
-                public void run()
-                {
+                public void run() {
                     setCurrentAction(ActionType.ACTION_TYPE_NONE);
                 }
             });
-        }
-        else if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_RUNNING)
-        {
+        } else if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_RUNNING) {
             mDeviceController = deviceController;
         }
     }
 
     @Override
-    public void onExtensionStateChanged(ARDeviceController deviceController, ARCONTROLLER_DEVICE_STATE_ENUM newState, ARDISCOVERY_PRODUCT_ENUM product, String name, ARCONTROLLER_ERROR_ENUM error)
-    {}
+    public void onExtensionStateChanged(ARDeviceController deviceController, ARCONTROLLER_DEVICE_STATE_ENUM newState, ARDISCOVERY_PRODUCT_ENUM product, String name, ARCONTROLLER_ERROR_ENUM error) {
+    }
 
     @Override
-    public void onCommandReceived(ARDeviceController deviceController, ARCONTROLLER_DICTIONARY_KEY_ENUM commandKey, ARControllerDictionary elementDictionary)
-    {
+    public void onCommandReceived(ARDeviceController deviceController, ARCONTROLLER_DICTIONARY_KEY_ENUM commandKey, ARControllerDictionary elementDictionary) {
     }
     //endregion ARDeviceControllerListener
 
-    protected void notifyConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state)
-    {
+    protected void notifyConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state) {
         List<ParrotDroneListener> listenersCpy = new ArrayList<>(mListeners);
-        for (ParrotDroneListener listener : listenersCpy)
-        {
+        for (ParrotDroneListener listener : listenersCpy) {
             listener.onDroneConnectionChanged(state);
         }
     }
 
-    private void notifyActionChanged(int action)
-    {
+    private void notifyActionChanged(int action) {
         List<ParrotDroneListener> listenersCpy = new ArrayList<>(mListeners);
-        for (ParrotDroneListener listener : listenersCpy)
-        {
+        for (ParrotDroneListener listener : listenersCpy) {
             listener.onDroneActionChanged(action);
         }
     }

@@ -15,20 +15,16 @@ import com.sousoum.shared.ActionType;
 /**
  * Created by d.bertrand on 15/01/16.
  */
-public class ParrotJumpingDrone extends ParrotDrone
-{
+public class ParrotJumpingDrone extends ParrotDrone {
     private static final String TAG = "ParrotJumpingDrone";
 
-    public ParrotJumpingDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx)
-    {
+    public ParrotJumpingDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx) {
         super(deviceService, ctx);
     }
 
     @Override
-    public void pilotWithAcceleroData(AccelerometerData accelerometerData)
-    {
-        if (mDeviceController != null)
-        {
+    public void pilotWithAcceleroData(AccelerometerData accelerometerData) {
+        if (mDeviceController != null) {
             byte speedVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccY() / 9.0) * 50))));
             byte turnVal = (byte) -(Math.max(-100, Math.min(100, ((accelerometerData.getAccX() / 9.0) * 50))));
             Log.i(TAG, "speed = " + speedVal + " | turn = " + turnVal);
@@ -37,34 +33,27 @@ public class ParrotJumpingDrone extends ParrotDrone
     }
 
     @Override
-    public void stopPiloting()
-    {
-        if (mDeviceController != null)
-        {
+    public void stopPiloting() {
+        if (mDeviceController != null) {
             mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0);
         }
     }
 
     @Override
-    public void sendAction()
-    {
-        if (mDeviceController != null)
-        {
+    public void sendAction() {
+        if (mDeviceController != null) {
             mDeviceController.getFeatureJumpingSumo().sendAnimationsJump(ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_ENUM.ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_HIGH);
         }
     }
 
     @Override
-    public void onStateChanged(ARDeviceController deviceController, ARCONTROLLER_DEVICE_STATE_ENUM newState, ARCONTROLLER_ERROR_ENUM error)
-    {
+    public void onStateChanged(ARDeviceController deviceController, ARCONTROLLER_DEVICE_STATE_ENUM newState, ARCONTROLLER_ERROR_ENUM error) {
         super.onStateChanged(deviceController, newState, error);
 
         if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_RUNNING) {
-            mHandler.post(new Runnable()
-            {
+            mHandler.post(new Runnable() {
                 @Override
-                public void run()
-                {
+                public void run() {
                     setCurrentAction(ActionType.ACTION_TYPE_JUMP);
                 }
             });

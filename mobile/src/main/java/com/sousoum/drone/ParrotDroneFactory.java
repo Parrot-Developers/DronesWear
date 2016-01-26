@@ -9,8 +9,7 @@ import com.parrot.arsdk.ardiscovery.ARDiscoveryService;
 /**
  * Created by d.bertrand on 15/01/16.
  */
-public class ParrotDroneFactory
-{
+public class ParrotDroneFactory {
     public static ParrotDrone createParrotDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx) {
         ParrotDrone drone = null;
         switch (ARDiscoveryService.getProductFamily(ARDiscoveryService.getProductFromProductID(deviceService.getProductID()))) {

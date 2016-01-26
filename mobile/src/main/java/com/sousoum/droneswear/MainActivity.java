@@ -34,8 +34,7 @@ import com.sousoum.shared.Message;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener
-{
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener {
     private static final String TAG = "MobileMainActivity";
 
     private static final int ALPHA_ANIM_DURATION = 500;
@@ -64,27 +63,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private Discoverer mDiscoverer;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mTimeoutHelper = findViewById(R.id.timeout_helper);
-        mTextView = (TextView)findViewById(R.id.textView);
-        mAcceleroSwitch = (Switch)findViewById(R.id.acceleroSwitch);
-        mAcceleroSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
-        {
+        mTextView = (TextView) findViewById(R.id.textView);
+        mAcceleroSwitch = (Switch) findViewById(R.id.acceleroSwitch);
+        mAcceleroSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b)
-            {
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 onAcceleroSwitchCheckChanged();
             }
         });
-        mEmergencyBt = (Button)findViewById(R.id.emergencyBt);
-        mEmergencyBt.setOnClickListener(new View.OnClickListener()
-        {
+        mEmergencyBt = (Button) findViewById(R.id.emergencyBt);
+        mEmergencyBt.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
+            public void onClick(View view) {
                 onEmergencyClicked();
             }
         });
@@ -99,20 +93,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mDiscoverer.addListener(this);
 
         mHandler = new Handler(getMainLooper());
-        mAnimRunnable = new Runnable()
-        {
+        mAnimRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 startBounceAnimation();
             }
         };
 
-        mReconnectRunnable = new Runnable()
-        {
+        mReconnectRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 if (mDiscoverer != null) {
                     mDiscoverer.startDiscovering();
                     mTextView.setText(R.string.discovering);
@@ -122,17 +112,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onPause(){
+    protected void onPause() {
         super.onPause();
 
         PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionTypeMessage(ActionType.ACTION_TYPE_NONE, mGoogleApiClient);
-        pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>()
-        {
+        pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
             @Override
-            public void onResult(DataApi.DataItemResult dataItemsResult)
-            {
-                if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
-                {
+            public void onResult(DataApi.DataItemResult dataItemsResult) {
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
                     Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
                     mGoogleApiClient.disconnect();
                 }
@@ -143,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
 
         mGoogleApiClient.connect();
@@ -153,23 +140,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
 
-    private void sendActionType(int actionType)
-    {
+    private void sendActionType(int actionType) {
         Message.sendActionTypeMessage(actionType, mGoogleApiClient);
     }
 
     //region ParrotDroneListener
     @Override
-    public void onDroneConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state)
-    {
+    public void onDroneConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state) {
         switch (state) {
             case ARCONTROLLER_DEVICE_STATE_RUNNING:
                 mDiscoverer.stopDiscovering();
                 mTextView.setText(R.string.device_connected);
                 break;
             case ARCONTROLLER_DEVICE_STATE_STOPPED:
-                synchronized (mDroneLock)
-                {
+                synchronized (mDroneLock) {
                     mDrone = null;
                 }
                 mTextView.setText(R.string.device_disconnected);
@@ -179,8 +163,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onDroneActionChanged(int action)
-    {
+    public void onDroneActionChanged(int action) {
         switch (action) {
             case ActionType.ACTION_TYPE_LAND:
                 mEmergencyBt.setVisibility(View.VISIBLE);
@@ -196,17 +179,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     //region DiscovererListener
     @Override
-    public void onServiceDiscovered(ARDiscoveryDeviceService deviceService)
-    {
+    public void onServiceDiscovered(ARDiscoveryDeviceService deviceService) {
         mTimeoutHelper.setVisibility(View.GONE);
         mTextView.setVisibility(View.VISIBLE);
         mHandler.removeCallbacks(mAnimRunnable);
-        if (mDrone == null)
-        {
+        if (mDrone == null) {
             mTextView.setText(String.format(getString(R.string.connecting_to_device), deviceService.getName()));
             mDiscoverer.stopDiscovering();
-            synchronized (mDroneLock)
-            {
+            synchronized (mDroneLock) {
                 mDrone = ParrotDroneFactory.createParrotDrone(deviceService, this);
                 mDrone.addListener(this);
             }
@@ -214,8 +194,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onDiscoveryTimedOut()
-    {
+    public void onDiscoveryTimedOut() {
         mTimeoutHelper.setVisibility(View.VISIBLE);
         mTextView.setVisibility(View.GONE);
         startAnimation();
@@ -288,8 +267,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     //region Button Listeners
     private void onEmergencyClicked() {
-        if (mDrone != null && (mDrone instanceof ParrotFlyingDrone))
-        {
+        if (mDrone != null && (mDrone instanceof ParrotFlyingDrone)) {
             ((ParrotFlyingDrone) mDrone).sendEmergency();
         }
     }
@@ -297,8 +275,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private void onAcceleroSwitchCheckChanged() {
         mUseWatchAccelero = mAcceleroSwitch.isChecked();
         Log.i(TAG, "Accelero is checked = " + mUseWatchAccelero);
-        if (!mUseWatchAccelero && mDrone != null)
-        {
+        if (!mUseWatchAccelero && mDrone != null) {
             mDrone.stopPiloting();
         }
     }
@@ -314,14 +291,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Message.MESSAGE_TYPE messageType = Message.getMessageType(dataItem);
 
             if (event.getType() == DataEvent.TYPE_DELETED) {
-                switch (messageType)
-                {
+                switch (messageType) {
                     case ACC:
                         Log.e(TAG, "No piloting received");
-                        synchronized (mDroneLock)
-                        {
-                            if (mDrone != null && mUseWatchAccelero)
-                            {
+                        synchronized (mDroneLock) {
+                            if (mDrone != null && mUseWatchAccelero) {
                                 mDrone.stopPiloting();
                             }
 
@@ -332,11 +306,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 switch (messageType) {
                     case ACC:
                         synchronized (mDroneLock) {
-                            if (mDrone != null && mUseWatchAccelero)
-                            {
+                            if (mDrone != null && mUseWatchAccelero) {
                                 AccelerometerData accelerometerData = Message.decodeAcceleroMessage(dataItem);
-                                if (accelerometerData != null)
-                                {
+                                if (accelerometerData != null) {
                                     mDrone.pilotWithAcceleroData(accelerometerData);
                                 } else {
                                     mDrone.stopPiloting();
@@ -346,8 +318,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         }
                         break;
                     case ACTION:
-                        if (mDrone != null)
-                        {
+                        if (mDrone != null) {
                             mDrone.sendAction();
                         }
                         break;
@@ -360,8 +331,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     //region GoogleApiClient.ConnectionCallbacks
     @Override
-    public void onConnected(Bundle bundle)
-    {
+    public void onConnected(Bundle bundle) {
         Wearable.DataApi.addListener(mGoogleApiClient, this);
 
         if (mDrone != null) {
@@ -370,8 +340,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onConnectionSuspended(int i)
-    {
+    public void onConnectionSuspended(int i) {
         Log.i(TAG, "onConnectionSuspended");
     }
     //endregion GoogleApiClient.ConnectionCallbacks

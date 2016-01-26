@@ -23,14 +23,14 @@ import java.util.List;
 /**
  * Created by d.bertrand on 13/01/16.
  */
-public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiverDelegate
-{
+public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiverDelegate {
     private static final String TAG = "Discoverer";
     private static final int TIMEOUT_DELAY_MS = 8000;
 
     public interface DiscovererListener {
         /**
          * Called when a Parrot device has been found on the network
+         *
          * @param deviceService The device found
          */
         void onServiceDiscovered(ARDiscoveryDeviceService deviceService);
@@ -40,6 +40,7 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
          */
         void onDiscoveryTimedOut();
     }
+
     private List<DiscovererListener> mListeners;
 
 
@@ -58,11 +59,9 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
 
         mListeners = new ArrayList<>();
         mHandler = new Handler(mCtx.getMainLooper());
-        mTimeoutRunnable = new Runnable()
-        {
+        mTimeoutRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 notifyDiscoveryTimedOut();
                 mHandler.removeCallbacks(mTimeoutRunnable);
             }
@@ -90,10 +89,8 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         mListeners.remove(listener);
     }
 
-    public void startDiscovering()
-    {
-        if (mArdiscoveryService != null)
-        {
+    public void startDiscovering() {
+        if (mArdiscoveryService != null) {
             Log.i(TAG, "Start discovering");
             onServicesDevicesListUpdated();
             mArdiscoveryService.startWifiDiscovering();
@@ -101,10 +98,8 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         }
     }
 
-    public void stopDiscovering()
-    {
-        if (mArdiscoveryService != null)
-        {
+    public void stopDiscovering() {
+        if (mArdiscoveryService != null) {
             Log.i(TAG, "Stop discovering");
             mArdiscoveryService.stopWifiDiscovering();
             mHandler.removeCallbacks(mTimeoutRunnable);
@@ -112,57 +107,45 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
     }
 
 
-    private void initBroadcastReceiver()
-    {
+    private void initBroadcastReceiver() {
         mArdiscoveryServicesDevicesListUpdatedReceiver = new ARDiscoveryServicesDevicesListUpdatedReceiver(this);
     }
 
-    private void initDiscoveryService()
-    {
+    private void initDiscoveryService() {
         // create the service connection
-        if (mArdiscoveryServiceConnection == null)
-        {
-            mArdiscoveryServiceConnection = new ServiceConnection()
-            {
+        if (mArdiscoveryServiceConnection == null) {
+            mArdiscoveryServiceConnection = new ServiceConnection() {
                 @Override
-                public void onServiceConnected(ComponentName name, IBinder service)
-                {
+                public void onServiceConnected(ComponentName name, IBinder service) {
                     mArdiscoveryService = ((ARDiscoveryService.LocalBinder) service).getService();
 
                     startDiscovering();
                 }
 
                 @Override
-                public void onServiceDisconnected(ComponentName name)
-                {
+                public void onServiceDisconnected(ComponentName name) {
                     mArdiscoveryService = null;
                 }
             };
         }
 
-        if (mArdiscoveryService == null)
-        {
+        if (mArdiscoveryService == null) {
             // if the discovery service doesn't exists, bind to it
             Intent i = new Intent(mCtx, ARDiscoveryService.class);
             mCtx.bindService(i, mArdiscoveryServiceConnection, Context.BIND_AUTO_CREATE);
-        }
-        else
-        {
+        } else {
             // if the discovery service already exists, start discovery
             startDiscovering();
         }
     }
 
-    private void closeDiscoveryService()
-    {
+    private void closeDiscoveryService() {
         Log.d(TAG, "closeServices ...");
 
-        if (mArdiscoveryService != null)
-        {
+        if (mArdiscoveryService != null) {
             new Thread(new Runnable() {
                 @Override
-                public void run()
-                {
+                public void run() {
                     mArdiscoveryService.stop();
 
                     mCtx.unbindService(mArdiscoveryServiceConnection);
@@ -172,43 +155,34 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         }
     }
 
-    private void registerReceivers()
-    {
+    private void registerReceivers() {
         LocalBroadcastManager localBroadcastMgr = LocalBroadcastManager.getInstance(mCtx);
         localBroadcastMgr.registerReceiver(mArdiscoveryServicesDevicesListUpdatedReceiver, new IntentFilter(ARDiscoveryService.kARDiscoveryServiceNotificationServicesDevicesListUpdated));
     }
 
-    private void unregisterReceivers()
-    {
+    private void unregisterReceivers() {
         LocalBroadcastManager localBroadcastMgr = LocalBroadcastManager.getInstance(mCtx);
         localBroadcastMgr.unregisterReceiver(mArdiscoveryServicesDevicesListUpdatedReceiver);
     }
 
     @Override
-    public void onServicesDevicesListUpdated()
-    {
-        if (mArdiscoveryService != null)
-        {
+    public void onServicesDevicesListUpdated() {
+        if (mArdiscoveryService != null) {
             List<ARDiscoveryDeviceService> deviceList = mArdiscoveryService.getDeviceServicesArray();
 
-            if(deviceList != null)
-            {
-                for (ARDiscoveryDeviceService service : deviceList)
-                {
-                    Log.i(TAG, "service :  "+ service + " name = " + service.getName());
+            if (deviceList != null) {
+                for (ARDiscoveryDeviceService service : deviceList) {
+                    Log.i(TAG, "service :  " + service + " name = " + service.getName());
                     final ARDISCOVERY_PRODUCT_ENUM product = ARDiscoveryService.getProductFromProductID(service.getProductID());
-                    Log.i(TAG, "product :  "+ product);
+                    Log.i(TAG, "product :  " + product);
                     // only display drones from family Bebop and Jumping
                     if (ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_JS.equals(ARDiscoveryService.getProductFamily(product)) ||
-                            ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_ARDRONE.equals(ARDiscoveryService.getProductFamily(product)))
-                    {
-                        final ARDiscoveryDeviceService serviceFinal  = service;
+                            ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_ARDRONE.equals(ARDiscoveryService.getProductFamily(product))) {
+                        final ARDiscoveryDeviceService serviceFinal = service;
                         mHandler.removeCallbacks(mTimeoutRunnable);
-                        mHandler.post(new Runnable()
-                        {
+                        mHandler.post(new Runnable() {
                             @Override
-                            public void run()
-                            {
+                            public void run() {
                                 notifyServiceDiscovered(serviceFinal);
                             }
                         });
@@ -220,21 +194,17 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         }
     }
 
-    private void notifyServiceDiscovered(ARDiscoveryDeviceService discoveryDeviceService)
-    {
+    private void notifyServiceDiscovered(ARDiscoveryDeviceService discoveryDeviceService) {
         Log.e(TAG, "Listeners = " + mListeners);
         List<DiscovererListener> listenersCpy = new ArrayList<>(mListeners);
-        for (DiscovererListener listener : listenersCpy)
-        {
+        for (DiscovererListener listener : listenersCpy) {
             listener.onServiceDiscovered(discoveryDeviceService);
         }
     }
 
-    private void notifyDiscoveryTimedOut()
-    {
+    private void notifyDiscoveryTimedOut() {
         List<DiscovererListener> listenersCpy = new ArrayList<>(mListeners);
-        for (DiscovererListener listener : listenersCpy)
-        {
+        for (DiscovererListener listener : listenersCpy) {
             listener.onDiscoveryTimedOut();
         }
     }
