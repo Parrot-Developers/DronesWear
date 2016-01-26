@@ -12,6 +12,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
@@ -123,9 +125,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onPause(){
         super.onPause();
 
-        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-            mGoogleApiClient.disconnect();
-        }
+        PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionTypeMessage(ActionType.ACTION_TYPE_NONE, mGoogleApiClient);
+        pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>()
+        {
+            @Override
+            public void onResult(DataApi.DataItemResult dataItemsResult)
+            {
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
+                {
+                    Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
+                    mGoogleApiClient.disconnect();
+                }
+            }
+        });
 
         mDiscoverer.cleanup();
     }

@@ -22,6 +22,7 @@ import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.Wearable;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
@@ -108,6 +109,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             {
                 if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
                 {
+                    Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
                     mGoogleApiClient.disconnect();
                 }
             }
@@ -254,6 +256,30 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onConnected(Bundle bundle)
     {
         Wearable.DataApi.addListener(mGoogleApiClient, this);
+
+        // get existing data
+        PendingResult<DataItemBuffer> results = Wearable.DataApi.getDataItems(mGoogleApiClient);
+        results.setResultCallback(new ResultCallback<DataItemBuffer>()
+        {
+            @Override
+            public void onResult(DataItemBuffer dataItems)
+            {
+                if (dataItems != null)
+                {
+                    for (DataItem dataItem : dataItems)
+                    {
+                        switch (Message.getMessageType(dataItem))
+                        {
+                            case ACTION_TYPE:
+                                int productAction = Message.decodeActionTypeMessage(dataItem);
+                                onActionTypeChanged(productAction);
+                                break;
+                        }
+                    }
+                    dataItems.release();
+                }
+            }
+        });
     }
 
     @Override
