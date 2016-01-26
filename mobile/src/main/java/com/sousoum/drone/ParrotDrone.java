@@ -78,6 +78,10 @@ public abstract class ParrotDrone implements ARDeviceControllerListener
         mListeners.remove(listener);
     }
 
+    public int getCurrentAction() {
+        return mCurrentAction;
+    }
+
     /**
      * Make the drone move according to the given data
      * @param accelerometerData the data taken from the accelerometer

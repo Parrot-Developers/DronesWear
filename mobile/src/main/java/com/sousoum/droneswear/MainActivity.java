@@ -363,6 +363,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnected(Bundle bundle)
     {
         Wearable.DataApi.addListener(mGoogleApiClient, this);
+
+        if (mDrone != null) {
+            Message.sendActionTypeMessage(mDrone.getCurrentAction(), mGoogleApiClient);
+        }
     }
 
     @Override
