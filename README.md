@@ -2,7 +2,9 @@
 
 ##Purpose
 DronesWear is an Android app which lets you control some of the Parrot drones
-with your Android wear device (and its handheld device).
+with your Android wear device (and its handheld device). 
+
+It is available on the [Play Store](https://play.google.com/store/apps/details?id=com.sousoum.droneswear).
 
 ##Supported Parrot drones
 For the moment, you can control these drones:
@@ -39,9 +41,15 @@ if there is no internet connection, please answer yes**.
 4. Now that you're connected, the action button is displayed on the watch.
 5. Just move your wrist gently and see how the drone moves :)
 
+**If disconnections appears to often, be sure that your drone is on a 5ghz Wifi** (if your country laws authorize it). You can change the Wifi band of your drone with the official Parrot app FreeFlight3.
+
 ##SDK
-The app uses the latest SDK release. It gets the SDK libs from JCenter.
+The app uses the latest Parrot Drone SDK release. It gets the SDK libs from JCenter.
+
+You can find the SDK documentation here: [http://developer.parrot.com/](http://developer.parrot.com/).
+
+If you need to ask questions about the SDK: [http://forum.developer.parrot.com/](http://forum.developer.parrot.com/).
 
 ##Credit
-This project has been created and is maintained by Djavan Bertrand. 
+This project has been created and is maintained by Djavan Bertrand. <br/>
 Parrot is assuming no responsability on this code.
