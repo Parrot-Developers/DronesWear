@@ -10,7 +10,16 @@
     <string name="discovering">Looking for a Parrot device to connect</string>
     <string name="connecting_to_device">"Connecting to Parrot Device: %s"</string>
     <string name="device_disconnected">Parrot device disconnected. Trying to reconnect.</string>
-    <string name="device_connected">Parrot device connected, you can start using your watch to move it</string>
+    <string name="device_connected">Parrot device %s connected</string>
     <string name="emergency">Emergency</string>
+    <string name="wifi_band_2ghz">If you are experiencing too many disconnections\n
+        try putting you\'re drone on a 5ghz band \n
+        (with the Parrot official app).
+    </string>
     <string name="pilot_from_wear">Pilot from wear</string>
+    <string name="no_piloting">When you are ready to pilot it, \n
+        tap on the \n
+        \"Pilot from wear\" switch.</string>
+    <string name="with_piloting">You can start using your watch \n
+        to move the drone.</string>
 </resources>

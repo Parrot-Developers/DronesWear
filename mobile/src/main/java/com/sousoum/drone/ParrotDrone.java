@@ -8,10 +8,12 @@ import android.util.Log;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DICTIONARY_KEY_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_ERROR_ENUM;
+import com.parrot.arsdk.arcontroller.ARControllerArgumentDictionary;
 import com.parrot.arsdk.arcontroller.ARControllerDictionary;
 import com.parrot.arsdk.arcontroller.ARControllerException;
 import com.parrot.arsdk.arcontroller.ARDeviceController;
 import com.parrot.arsdk.arcontroller.ARDeviceControllerListener;
+import com.parrot.arsdk.arcontroller.ARFeatureCommon;
 import com.parrot.arsdk.ardiscovery.ARDISCOVERY_PRODUCT_ENUM;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDevice;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceNetService;
@@ -30,6 +32,9 @@ import java.util.List;
 public abstract class ParrotDrone implements ARDeviceControllerListener {
     private static final String TAG = "ParrotDrone";
 
+    public static final int WIFI_BAND_5GHZ = 0;
+    public static final int WIFI_BAND_2_4GHZ = 1;
+
     public interface ParrotDroneListener {
         /**
          * Called when the connection to the drone changes
@@ -44,6 +49,13 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
          * @param action the action type (@see ActionType)
          */
         void onDroneActionChanged(int action);
+
+        /**
+         * Called when the drone wifi band changes
+         *
+         * @param band the action type (@see ActionType)
+         */
+        void onDroneWifiBandChanged(int band);
     }
 
     private final List<ParrotDroneListener> mListeners;
@@ -53,6 +65,7 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
     protected final Handler mHandler;
 
     protected int mCurrentAction;
+    protected String mName;
 
     public ParrotDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx) {
 
@@ -80,6 +93,10 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
 
     public int getCurrentAction() {
         return mCurrentAction;
+    }
+
+    public String getName() {
+        return mName;
     }
 
     /**
@@ -164,6 +181,13 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
 
     @Override
     public void onCommandReceived(ARDeviceController deviceController, ARCONTROLLER_DICTIONARY_KEY_ENUM commandKey, ARControllerDictionary elementDictionary) {
+
+        if ((commandKey == ARCONTROLLER_DICTIONARY_KEY_ENUM.ARCONTROLLER_DICTIONARY_KEY_COMMON_SETTINGSSTATE_PRODUCTNAMECHANGED) && (elementDictionary != null)){
+            ARControllerArgumentDictionary<Object> args = elementDictionary.get(ARControllerDictionary.ARCONTROLLER_DICTIONARY_SINGLE_KEY);
+            if (args != null) {
+                mName = (String)args.get(ARFeatureCommon.ARCONTROLLER_DICTIONARY_KEY_COMMON_SETTINGSSTATE_PRODUCTNAMECHANGED_NAME);
+            }
+        }
     }
     //endregion ARDeviceControllerListener
 
@@ -174,10 +198,17 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
         }
     }
 
-    private void notifyActionChanged(int action) {
+    protected void notifyActionChanged(int action) {
         List<ParrotDroneListener> listenersCpy = new ArrayList<>(mListeners);
         for (ParrotDroneListener listener : listenersCpy) {
             listener.onDroneActionChanged(action);
+        }
+    }
+
+    protected void notifyWifiBandChanged(int band) {
+        List<ParrotDroneListener> listenersCpy = new ArrayList<>(mListeners);
+        for (ParrotDroneListener listener : listenersCpy) {
+            listener.onDroneWifiBandChanged(band);
         }
     }
 }

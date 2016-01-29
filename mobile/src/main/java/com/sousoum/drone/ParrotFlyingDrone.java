@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.parrot.arsdk.arcommands.ARCOMMANDS_ARDRONE3_NETWORK_WIFISCAN_BAND_ENUM;
 import com.parrot.arsdk.arcommands.ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DICTIONARY_KEY_ENUM;
 import com.parrot.arsdk.arcontroller.ARControllerArgumentDictionary;
@@ -89,6 +90,35 @@ public class ParrotFlyingDrone extends ParrotDrone {
                         setCurrentAction(action);
                     }
                 });
+            }
+        } else if ((commandKey == ARCONTROLLER_DICTIONARY_KEY_ENUM.ARCONTROLLER_DICTIONARY_KEY_ARDRONE3_NETWORKSETTINGSSTATE_WIFISELECTIONCHANGED) && (elementDictionary != null)) {
+            ARControllerArgumentDictionary<Object> args = elementDictionary.get(ARControllerDictionary.ARCONTROLLER_DICTIONARY_SINGLE_KEY);
+            if (args != null) {
+                final int band;
+                boolean isDetermined = false;
+                ARCOMMANDS_ARDRONE3_NETWORK_WIFISCAN_BAND_ENUM bandEnum = ARCOMMANDS_ARDRONE3_NETWORK_WIFISCAN_BAND_ENUM.getFromValue((Integer) args.get(ARFeatureARDrone3.ARCONTROLLER_DICTIONARY_KEY_ARDRONE3_NETWORKSETTINGSSTATE_WIFISELECTIONCHANGED_BAND));
+                switch (bandEnum) {
+                    case ARCOMMANDS_ARDRONE3_NETWORK_WIFISCAN_BAND_2_4GHZ:
+                        band = WIFI_BAND_2_4GHZ;
+                        isDetermined = true;
+                        break;
+                    case ARCOMMANDS_ARDRONE3_NETWORK_WIFISCAN_BAND_5GHZ:
+                        band = WIFI_BAND_5GHZ;
+                        isDetermined = true;
+                        break;
+                    default:
+                        band = -1;
+                        break;
+                }
+
+                if (isDetermined) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            notifyWifiBandChanged(band);
+                        }
+                    });
+                }
             }
         }
     }

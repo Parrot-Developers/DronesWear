@@ -5,9 +5,14 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.parrot.arsdk.arcommands.ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_ENUM;
+import com.parrot.arsdk.arcommands.ARCOMMANDS_JUMPINGSUMO_NETWORK_WIFISCAN_BAND_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
+import com.parrot.arsdk.arcontroller.ARCONTROLLER_DICTIONARY_KEY_ENUM;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_ERROR_ENUM;
+import com.parrot.arsdk.arcontroller.ARControllerArgumentDictionary;
+import com.parrot.arsdk.arcontroller.ARControllerDictionary;
 import com.parrot.arsdk.arcontroller.ARDeviceController;
+import com.parrot.arsdk.arcontroller.ARFeatureJumpingSumo;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
@@ -57,6 +62,42 @@ public class ParrotJumpingDrone extends ParrotDrone {
                     setCurrentAction(ActionType.ACTION_TYPE_JUMP);
                 }
             });
+        }
+    }
+
+    @Override
+    public void onCommandReceived(ARDeviceController deviceController, ARCONTROLLER_DICTIONARY_KEY_ENUM commandKey, ARControllerDictionary elementDictionary) {
+        super.onCommandReceived(deviceController, commandKey, elementDictionary);
+
+        if ((commandKey == ARCONTROLLER_DICTIONARY_KEY_ENUM.ARCONTROLLER_DICTIONARY_KEY_JUMPINGSUMO_NETWORKSETTINGSSTATE_WIFISELECTIONCHANGED) && (elementDictionary != null)) {
+            ARControllerArgumentDictionary<Object> args = elementDictionary.get(ARControllerDictionary.ARCONTROLLER_DICTIONARY_SINGLE_KEY);
+            if (args != null) {
+                final int band;
+                boolean isDetermined = false;
+                ARCOMMANDS_JUMPINGSUMO_NETWORK_WIFISCAN_BAND_ENUM bandEnum = ARCOMMANDS_JUMPINGSUMO_NETWORK_WIFISCAN_BAND_ENUM.getFromValue((Integer) args.get(ARFeatureJumpingSumo.ARCONTROLLER_DICTIONARY_KEY_JUMPINGSUMO_NETWORKSETTINGSSTATE_WIFISELECTIONCHANGED_BAND));
+                switch (bandEnum) {
+                    case ARCOMMANDS_JUMPINGSUMO_NETWORK_WIFISCAN_BAND_2_4GHZ:
+                        band = WIFI_BAND_2_4GHZ;
+                        isDetermined = true;
+                        break;
+                    case ARCOMMANDS_JUMPINGSUMO_NETWORK_WIFISCAN_BAND_5GHZ:
+                        band = WIFI_BAND_5GHZ;
+                        isDetermined = true;
+                        break;
+                    default:
+                        band = -1;
+                        break;
+                }
+
+                if (isDetermined) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            notifyWifiBandChanged(band);
+                        }
+                    });
+                }
+            }
         }
     }
 }

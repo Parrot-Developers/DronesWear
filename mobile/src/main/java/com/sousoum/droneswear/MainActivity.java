@@ -47,7 +47,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private View mTimeoutHelper;
     private Button mEmergencyBt;
-    private TextView mTextView;
+    private TextView mConnectionTextView;
+    private TextView mWifiTextView;
+    private TextView mPilotingTextView;
     private Switch mAcceleroSwitch;
 
     private Handler mHandler;
@@ -67,7 +69,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mTimeoutHelper = findViewById(R.id.timeout_helper);
-        mTextView = (TextView) findViewById(R.id.textView);
+        mConnectionTextView = (TextView) findViewById(R.id.connection_text_view);
+        mWifiTextView = (TextView) findViewById(R.id.wifi_text_view);
+        mPilotingTextView = (TextView) findViewById(R.id.piloting_text_view);
+
         mAcceleroSwitch = (Switch) findViewById(R.id.acceleroSwitch);
         mAcceleroSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -83,8 +88,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
-        mUseWatchAccelero = true;
-        mAcceleroSwitch.setChecked(true);
+        mUseWatchAccelero = false;
+        mAcceleroSwitch.setChecked(mUseWatchAccelero);
+        updatePilotingText();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
 
@@ -105,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             public void run() {
                 if (mDiscoverer != null) {
                     mDiscoverer.startDiscovering();
-                    mTextView.setText(R.string.discovering);
+                    mConnectionTextView.setText(R.string.discovering);
                 }
             }
         };
@@ -136,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mGoogleApiClient.connect();
 
         mDiscoverer.setup();
-        mTextView.setText(R.string.discovering);
+        mConnectionTextView.setText(R.string.discovering);
     }
 
 
@@ -150,13 +156,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         switch (state) {
             case ARCONTROLLER_DEVICE_STATE_RUNNING:
                 mDiscoverer.stopDiscovering();
-                mTextView.setText(R.string.device_connected);
+                mConnectionTextView.setText(String.format(getString(R.string.device_connected), mDrone.getName()));
+                mWifiTextView.setVisibility(View.VISIBLE);
+                mPilotingTextView.setVisibility(View.VISIBLE);
                 break;
             case ARCONTROLLER_DEVICE_STATE_STOPPED:
                 synchronized (mDroneLock) {
                     mDrone = null;
                 }
-                mTextView.setText(R.string.device_disconnected);
+                mConnectionTextView.setText(R.string.device_disconnected);
+                mWifiTextView.setVisibility(View.GONE);
+                mPilotingTextView.setVisibility(View.GONE);
                 mHandler.postDelayed(mReconnectRunnable, 5000);
                 break;
         }
@@ -175,16 +185,29 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         sendActionType(action);
     }
+
+    @Override
+    public void onDroneWifiBandChanged(int band) {
+        Log.e(TAG, "Wifi band received = " + band);
+        switch (band) {
+            case ParrotDrone.WIFI_BAND_2_4GHZ:
+                mWifiTextView.setText(R.string.wifi_band_2ghz);
+                break;
+            case ParrotDrone.WIFI_BAND_5GHZ:
+                mWifiTextView.setText(null);
+                break;
+        }
+    }
     //endregion ParrotDroneListener
 
     //region DiscovererListener
     @Override
     public void onServiceDiscovered(ARDiscoveryDeviceService deviceService) {
         mTimeoutHelper.setVisibility(View.GONE);
-        mTextView.setVisibility(View.VISIBLE);
+        mConnectionTextView.setVisibility(View.VISIBLE);
         mHandler.removeCallbacks(mAnimRunnable);
         if (mDrone == null) {
-            mTextView.setText(String.format(getString(R.string.connecting_to_device), deviceService.getName()));
+            mConnectionTextView.setText(String.format(getString(R.string.connecting_to_device), deviceService.getName()));
             mDiscoverer.stopDiscovering();
             synchronized (mDroneLock) {
                 mDrone = ParrotDroneFactory.createParrotDrone(deviceService, this);
@@ -196,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onDiscoveryTimedOut() {
         mTimeoutHelper.setVisibility(View.VISIBLE);
-        mTextView.setVisibility(View.GONE);
+        mConnectionTextView.setVisibility(View.GONE);
         startAnimation();
     }
     //endregion DiscovererListener
@@ -278,6 +301,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (!mUseWatchAccelero && mDrone != null) {
             mDrone.stopPiloting();
         }
+
+        updatePilotingText();
+    }
+
+    private void updatePilotingText() {
+        mPilotingTextView.setText((mUseWatchAccelero) ? R.string.with_piloting : R.string.no_piloting);
     }
 
     //endregion Button Listeners
@@ -289,11 +318,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             DataItem dataItem = event.getDataItem();
             Message.MESSAGE_TYPE messageType = Message.getMessageType(dataItem);
-
             if (event.getType() == DataEvent.TYPE_DELETED) {
                 switch (messageType) {
                     case ACC:
-                        Log.e(TAG, "No piloting received");
                         synchronized (mDroneLock) {
                             if (mDrone != null && mUseWatchAccelero) {
                                 mDrone.stopPiloting();
