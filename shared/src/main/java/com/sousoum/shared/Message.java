@@ -22,6 +22,7 @@ public class Message
     private static final String VALUE_STR = "value";
 
     private static Uri acceleroMessageUri;
+    private static Uri actionMessageUri;
 
     public enum MESSAGE_TYPE {
         UNKNOWN,
@@ -109,10 +110,18 @@ public class Message
 
     public static PendingResult<DataApi.DataItemResult> sendActionMessage(GoogleApiClient googleApiClient) {
         PutDataMapRequest dataMapRequest = PutDataMapRequest.create(ACTION_PATH);
+        actionMessageUri = dataMapRequest.getUri();
 
         // Data Push
         PutDataRequest request = dataMapRequest.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult = Wearable.DataApi.putDataItem(googleApiClient, request);
+
+        return pendingResult;
+    }
+
+    public static PendingResult<DataApi.DeleteDataItemsResult> emptyActionMessage(GoogleApiClient googleApiClient) {
+        PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Wearable.DataApi.deleteDataItems(googleApiClient, actionMessageUri);
+
 
         return pendingResult;
     }

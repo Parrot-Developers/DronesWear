@@ -197,7 +197,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     public void onButtonClicked(View view)
     {
-        Message.sendActionMessage(mGoogleApiClient);
+        PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionMessage(mGoogleApiClient);
+        pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+            @Override
+            public void onResult(DataApi.DataItemResult dataItemResult) {
+                Message.emptyActionMessage(mGoogleApiClient);
+            }
+        });
 
         Intent intent = new Intent(this, ConfirmationActivity.class);
         intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
