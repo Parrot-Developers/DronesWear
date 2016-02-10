@@ -41,16 +41,16 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         void onDiscoveryTimedOut();
     }
 
-    private List<DiscovererListener> mListeners;
+    private final List<DiscovererListener> mListeners;
 
 
-    private Context mCtx;
+    private final Context mCtx;
 
     private ARDiscoveryService mArdiscoveryService;
     private ServiceConnection mArdiscoveryServiceConnection;
     private ARDiscoveryServicesDevicesListUpdatedReceiver mArdiscoveryServicesDevicesListUpdatedReceiver;
 
-    private Handler mHandler;
+    private final Handler mHandler;
 
     private Runnable mTimeoutRunnable;
 
@@ -195,7 +195,6 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
     }
 
     private void notifyServiceDiscovered(ARDiscoveryDeviceService discoveryDeviceService) {
-        Log.e(TAG, "Listeners = " + mListeners);
         List<DiscovererListener> listenersCpy = new ArrayList<>(mListeners);
         for (DiscovererListener listener : listenersCpy) {
             listener.onServiceDiscovered(discoveryDeviceService);

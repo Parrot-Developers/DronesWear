@@ -5,7 +5,7 @@ package com.sousoum.shared;
  */
 public class AccelerometerData
 {
-    private float mAccData[];
+    private final float mAccData[];
 
     public AccelerometerData(float accX, float accY, float accZ) {
         mAccData = new float[3];
