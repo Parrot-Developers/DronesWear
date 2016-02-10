@@ -10,17 +10,6 @@
     tools:deviceIds="wear"
     android:background="@color/primary_light">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:textColor="@color/text_on_button"
-        android:layout_margin="35dp"
-        android:layout_gravity="center"
-        android:background="@drawable/button_res"
-        android:onClick="onButtonClicked"
-        android:visibility="gone"/>
-
     <TextView
         android:id="@+id/textview"
         android:layout_width="match_parent"
@@ -41,4 +30,42 @@
         android:textColor="@android:color/white"
         app:layout_box="all"/>
 
+    <android.support.wearable.view.GridViewPager
+        android:id="@+id/gridViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        android:background="#44ff0000"/>
+
+    <android.support.wearable.view.DotsPageIndicator
+        android:id="@+id/dotsPageIndicator"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dotFadeWhenIdle="false"
+        android:visibility="visible" />
+
 </android.support.wearable.view.BoxInsetLayout>
+<!--<android.support.wearable.view.BoxInsetLayout
+    android:id="@+id/container"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.sousoum.droneswear.MainActivity"
+    tools:deviceIds="wear"
+    android:background="@color/primary_light">
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@color/text_on_button"
+        android:layout_margin="35dp"
+        android:layout_gravity="center"
+        android:background="@drawable/button_res"
+        android:onClick="onButtonClicked"
+        android:visibility="gone"/>
+
+</android.support.wearable.view.BoxInsetLayout>-->

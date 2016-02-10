@@ -1,5 +1,6 @@
 package com.sousoum.droneswear;
 
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -10,8 +11,13 @@ import android.os.Handler;
 import android.support.wearable.activity.ConfirmationActivity;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
+import android.support.wearable.view.DotsPageIndicator;
+import android.support.wearable.view.GridPagerAdapter;
+import android.support.wearable.view.GridViewPager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -26,14 +32,16 @@ import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.Wearable;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
+import com.sousoum.shared.InteractionType;
+import com.sousoum.shared.JoystickData;
 import com.sousoum.shared.Message;
+import com.sousoum.views.JoystickView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, DataApi.DataListener
-{
+public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, JoystickView.JoystickListener {
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
             new SimpleDateFormat("HH:mm", Locale.US);
@@ -41,7 +49,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private BoxInsetLayout mContainerView;
     private TextView mClockView;
-    private Button mActionBt;
     private TextView mTextview;
 
     private Handler mHandler;
@@ -49,10 +56,21 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private SensorManager mManager;
 
     private final Object mAcceleroLock = new Object();
+    private final Object mJoystickLock = new Object();
 
     private AccelerometerData mAccData;
+    private JoystickData mJoystickData;
 
     private GoogleApiClient mGoogleApiClient;
+
+    private GridViewPager mGridViewPager;
+    private DWGridPagerAdapter mAdapter;
+    private DotsPageIndicator mDotsPageIndicator;
+
+    private boolean mShowAction;
+    private boolean mShowJoystick;
+
+    private int mCurrentAction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -61,12 +79,24 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         setContentView(R.layout.activity_main);
         setAmbientEnabled();
 
+        mShowAction = false;
+        mShowJoystick = false;
+
         mContainerView = (BoxInsetLayout) findViewById(R.id.container);
+        mGridViewPager = (GridViewPager) findViewById(R.id.gridViewPager);
+        mDotsPageIndicator = (DotsPageIndicator) findViewById(R.id.dotsPageIndicator);
+        mAdapter = new DWGridPagerAdapter(this);
+        mGridViewPager.setAdapter(mAdapter);
+        mDotsPageIndicator.setPager(mGridViewPager);
+        mDotsPageIndicator.setOnPageChangeListener(mAdapter);
+
         mClockView = (TextView) findViewById(R.id.clock);
-        mActionBt = (Button) findViewById(R.id.button);
         mTextview = (TextView) findViewById(R.id.textview);
 
+        mCurrentAction = ActionType.NONE;
+
         mAccData = new AccelerometerData(0, 0, 0);
+        mJoystickData = new JoystickData(0, 0);
 
         mManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
@@ -80,6 +110,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             {
 
                 sendSensorValues();
+                sendJoystickValues();
 
                 mHandler.postDelayed(mSendAccRunnable, 100);
 
@@ -90,8 +121,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    protected void onStop()
-    {
+    protected void onStop() {
         super.onStop();
         mManager.unregisterListener(this);
         mHandler.removeCallbacksAndMessages(null);
@@ -102,18 +132,25 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         super.onPause();
 
         PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Message.sendEmptyAcceleroMessage(mGoogleApiClient);
-        pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>()
-        {
-            @Override
-            public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult)
-            {
-                if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
-                {
-                    Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
-                    mGoogleApiClient.disconnect();
+        if (pendingResult != null) {
+            pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>() {
+                @Override
+                public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult) {
+                    PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Message.sendEmptyJoystickMessage(mGoogleApiClient);
+                    if (pendingResult != null) {
+                        pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>() {
+                            @Override
+                            public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult) {
+                                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                                    Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
+                                    mGoogleApiClient.disconnect();
+                                }
+                            }
+                        });
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override
@@ -162,40 +199,55 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-    private void sendSensorValues()
-    {
+    private void sendSensorValues() {
         synchronized (mAcceleroLock)
         {
             Message.sendAcceleroMessage(mAccData, mGoogleApiClient);
         }
     }
 
-    private void onActionTypeChanged(int actionType)
-    {
-        switch (actionType) {
-            case ActionType.ACTION_TYPE_NONE:
-                mActionBt.setVisibility(View.GONE);
-                mTextview.setVisibility(View.VISIBLE);
-                break;
-            case ActionType.ACTION_TYPE_JUMP:
-                mActionBt.setText(R.string.jump_action);
-                mActionBt.setVisibility(View.VISIBLE);
-                mTextview.setVisibility(View.GONE);
-                break;
-            case ActionType.ACTION_TYPE_TAKE_OFF:
-                mActionBt.setText(R.string.take_off_action);
-                mActionBt.setVisibility(View.VISIBLE);
-                mTextview.setVisibility(View.GONE);
-                break;
-            case ActionType.ACTION_TYPE_LAND:
-                mActionBt.setText(R.string.land_action);
-                mActionBt.setVisibility(View.VISIBLE);
-                mTextview.setVisibility(View.GONE);
-                break;
+    private void sendJoystickValues() {
+        synchronized (mJoystickLock)
+        {
+            Message.sendJoystickMessage(mJoystickData, mGoogleApiClient);
         }
     }
 
-    public void onButtonClicked(View view)
+    private void onActionTypeChanged(int actionType)
+    {
+        mCurrentAction = actionType;
+        switch (actionType) {
+            case ActionType.NONE:
+                mTextview.setVisibility(View.VISIBLE);
+                break;
+            case ActionType.JUMP:
+                mAdapter.notifyDataSetChanged();
+                break;
+            case ActionType.TAKE_OFF:
+                mAdapter.notifyDataSetChanged();
+                break;
+            case ActionType.LAND:
+                mAdapter.notifyDataSetChanged();
+                break;
+        }
+
+        if (actionType != ActionType.NONE) {
+            mTextview.setVisibility(View.GONE);
+        }
+    }
+
+    private void onInteractionTypeChanged(int interactionType) {
+        if ((interactionType & InteractionType.NONE) == InteractionType.NONE) {
+            mShowJoystick = false;
+            mShowAction = false;
+        } else {
+            mShowAction = ((interactionType & InteractionType.ACTION) == InteractionType.ACTION);
+            mShowJoystick = ((interactionType & InteractionType.JOYSTICK) == InteractionType.JOYSTICK);
+        }
+        mAdapter.notifyDataSetChanged();
+    }
+
+    private void onButtonClicked()
     {
         PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionMessage(mGoogleApiClient);
         pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
@@ -231,8 +283,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy)
-    {
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
     //endregion SensorEventListener
@@ -241,15 +292,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         for (DataEvent event : dataEvents) {
-            if (event.getType() == DataEvent.TYPE_DELETED) {
-                Log.d("TAG", "DataItem deleted: " + event.getDataItem().getUri());
-            } else if (event.getType() == DataEvent.TYPE_CHANGED) {
+            if (event.getType() == DataEvent.TYPE_CHANGED) {
                 DataItem dataItem = event.getDataItem();
                 switch (Message.getMessageType(dataItem)) {
                     case ACTION_TYPE:
                         int productAction = Message.decodeActionTypeMessage(dataItem);
                         onActionTypeChanged(productAction);
                         break;
+                    case INTERACTION_TYPE:
+                        int interactionType = Message.decodeInteractionTypeMessage(dataItem);
+                        onInteractionTypeChanged(interactionType);
                 }
 
             }
@@ -259,23 +311,17 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     //region GoogleApiClient.ConnectionCallbacks
     @Override
-    public void onConnected(Bundle bundle)
-    {
+    public void onConnected(Bundle bundle) {
         Wearable.DataApi.addListener(mGoogleApiClient, this);
 
         // get existing data
         PendingResult<DataItemBuffer> results = Wearable.DataApi.getDataItems(mGoogleApiClient);
-        results.setResultCallback(new ResultCallback<DataItemBuffer>()
-        {
+        results.setResultCallback(new ResultCallback<DataItemBuffer>() {
             @Override
-            public void onResult(DataItemBuffer dataItems)
-            {
-                if (dataItems != null)
-                {
-                    for (DataItem dataItem : dataItems)
-                    {
-                        switch (Message.getMessageType(dataItem))
-                        {
+            public void onResult(DataItemBuffer dataItems) {
+                if (dataItems != null) {
+                    for (DataItem dataItem : dataItems) {
+                        switch (Message.getMessageType(dataItem)) {
                             case ACTION_TYPE:
                                 int productAction = Message.decodeActionTypeMessage(dataItem);
                                 onActionTypeChanged(productAction);
@@ -289,9 +335,120 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    public void onConnectionSuspended(int i)
-    {
+    public void onConnectionSuspended(int i) {
         Log.i(TAG, "onConnectionSuspended");
     }
     //endregion GoogleApiClient.ConnectionCallbacks
+
+    @Override
+    public void onValuesUpdated(float percentX, float percentY) {
+        synchronized (mJoystickLock)
+        {
+            mJoystickData.setJoystickData(percentX, percentY);
+        }
+    }
+
+    public class DWGridPagerAdapter extends GridPagerAdapter  implements GridViewPager.OnPageChangeListener  {
+
+        private final LayoutInflater mLayoutInflater;
+
+        public DWGridPagerAdapter(Context ctx) {
+            mLayoutInflater = LayoutInflater.from(ctx);
+        }
+
+        @Override
+        public int getRowCount() {
+            return 1;
+        }
+
+        @Override
+        public int getColumnCount(int i) {
+            int nbColumns = 1;
+            if (mShowJoystick) nbColumns++;
+            return nbColumns;
+        }
+
+        @Override
+        public Object instantiateItem(ViewGroup container, int row, final int column) {
+            View view = null;
+            switch (column) {
+                case 0:
+                    if (mShowAction) {
+                        view = instantiateActionView(container);
+                    }
+                    break;
+                case 1:
+                    if (mShowJoystick) {
+                        view = instantiateJoystickView();
+                    }
+                    break;
+            }
+
+            if (view != null) {
+                container.addView(view);
+            }
+            return view;
+        }
+
+        private View instantiateActionView(ViewGroup container) {
+            final View actionView = mLayoutInflater.inflate(
+                    R.layout.action_layout, container, false);
+
+            Button actionBt = (Button) actionView.findViewById(R.id.button);
+            actionBt.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onButtonClicked();
+                }
+            });
+
+            switch (mCurrentAction) {
+                case ActionType.NONE:
+                    actionBt.setText(null);
+                    break;
+                case ActionType.JUMP:
+                    actionBt.setText(R.string.jump_action);
+                    break;
+                case ActionType.TAKE_OFF:
+                    actionBt.setText(R.string.take_off_action);
+                    break;
+                case ActionType.LAND:
+                    actionBt.setText(R.string.land_action);
+                    break;
+            }
+            return actionView;
+        }
+
+        private View instantiateJoystickView() {
+            final JoystickView joystickView = new JoystickView(MainActivity.this);
+            joystickView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            joystickView.addListener(MainActivity.this);
+
+            return joystickView;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup viewGroup, int row, int column, Object object) {
+            viewGroup.removeView((View)object);
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == object;
+        }
+
+        @Override
+        public void onPageScrolled(int i, int i1, float v, float v1, int i2, int i3) {
+
+        }
+
+        @Override
+        public void onPageSelected(int i, int i1) {
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int i) {
+
+        }
+    }
 }

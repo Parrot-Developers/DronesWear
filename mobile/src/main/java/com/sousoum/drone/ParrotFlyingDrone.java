@@ -14,6 +14,7 @@ import com.parrot.arsdk.arcontroller.ARFeatureARDrone3;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
+import com.sousoum.shared.JoystickData;
 
 /**
  * Created by d.bertrand on 15/01/16.
@@ -38,6 +39,17 @@ public class ParrotFlyingDrone extends ParrotDrone {
     }
 
     @Override
+    public void pilotWithJoystickData(JoystickData joystickData) {
+        if (mDeviceController != null) {
+            byte yawVal = (byte) Math.max(-100, Math.min(100, joystickData.getPercentX() * 50));
+            byte gazVal = (byte) Math.max(-100, Math.min(100, joystickData.getPercentY() * 50));
+            Log.w(TAG, "yaw = " + yawVal + " | gaz = " + gazVal);
+            mDeviceController.getFeatureARDrone3().setPilotingPCMDYaw(yawVal);
+            mDeviceController.getFeatureARDrone3().setPilotingPCMDGaz(gazVal);
+        }
+    }
+
+    @Override
     public void stopPiloting() {
         if (mDeviceController != null) {
             mDeviceController.getFeatureARDrone3().setPilotingPCMD((byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
@@ -48,10 +60,10 @@ public class ParrotFlyingDrone extends ParrotDrone {
     public void sendAction() {
         if (mDeviceController != null) {
             switch (mCurrentAction) {
-                case ActionType.ACTION_TYPE_TAKE_OFF:
+                case ActionType.TAKE_OFF:
                     mDeviceController.getFeatureARDrone3().sendPilotingTakeOff();
                     break;
-                case ActionType.ACTION_TYPE_LAND:
+                case ActionType.LAND:
                     mDeviceController.getFeatureARDrone3().sendPilotingLanding();
                     break;
             }
@@ -74,13 +86,13 @@ public class ParrotFlyingDrone extends ParrotDrone {
                 switch (state) {
                     case ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_FLYING:
                     case ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_HOVERING:
-                        action = ActionType.ACTION_TYPE_LAND;
+                        action = ActionType.LAND;
                         break;
                     case ARCOMMANDS_ARDRONE3_PILOTINGSTATE_FLYINGSTATECHANGED_STATE_LANDED:
-                        action = ActionType.ACTION_TYPE_TAKE_OFF;
+                        action = ActionType.TAKE_OFF;
                         break;
                     default:
-                        action = ActionType.ACTION_TYPE_NONE;
+                        action = ActionType.NONE;
                         break;
                 }
 

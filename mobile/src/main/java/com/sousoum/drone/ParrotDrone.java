@@ -22,6 +22,7 @@ import com.parrot.arsdk.ardiscovery.ARDiscoveryException;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryService;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
+import com.sousoum.shared.JoystickData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +108,13 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
     public abstract void pilotWithAcceleroData(AccelerometerData accelerometerData);
 
     /**
+     * Make the drone move according to the given data
+     *
+     * @param joystickData the data taken from the joystick
+     */
+    public abstract void pilotWithJoystickData(JoystickData joystickData);
+
+    /**
      * Make the drone stop moving
      */
     public abstract void stopPiloting();
@@ -167,7 +175,7 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    setCurrentAction(ActionType.ACTION_TYPE_NONE);
+                    setCurrentAction(ActionType.NONE);
                 }
             });
         } else if (newState == ARCONTROLLER_DEVICE_STATE_ENUM.ARCONTROLLER_DEVICE_STATE_RUNNING) {

@@ -16,6 +16,7 @@ import com.parrot.arsdk.arcontroller.ARFeatureJumpingSumo;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
+import com.sousoum.shared.JoystickData;
 
 /**
  * Created by d.bertrand on 15/01/16.
@@ -36,6 +37,9 @@ public class ParrotJumpingDrone extends ParrotDrone {
             mDeviceController.getFeatureJumpingSumo().setPilotingPCMD((byte) 1, speedVal, turnVal);
         }
     }
+
+    @Override
+    public void pilotWithJoystickData(JoystickData joystickData) {}
 
     @Override
     public void stopPiloting() {
@@ -59,7 +63,7 @@ public class ParrotJumpingDrone extends ParrotDrone {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    setCurrentAction(ActionType.ACTION_TYPE_JUMP);
+                    setCurrentAction(ActionType.JUMP);
                 }
             });
         }

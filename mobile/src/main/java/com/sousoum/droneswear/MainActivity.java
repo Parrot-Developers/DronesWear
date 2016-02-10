@@ -28,8 +28,11 @@ import com.sousoum.discovery.Discoverer;
 import com.sousoum.drone.ParrotDrone;
 import com.sousoum.drone.ParrotDroneFactory;
 import com.sousoum.drone.ParrotFlyingDrone;
+import com.sousoum.drone.ParrotJumpingDrone;
 import com.sousoum.shared.AccelerometerData;
 import com.sousoum.shared.ActionType;
+import com.sousoum.shared.InteractionType;
+import com.sousoum.shared.JoystickData;
 import com.sousoum.shared.Message;
 
 import java.util.ArrayList;
@@ -121,7 +124,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onPause() {
         super.onPause();
 
-        PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionTypeMessage(ActionType.ACTION_TYPE_NONE, mGoogleApiClient);
+        Message.sendInteractionTypeMessage(InteractionType.NONE, mGoogleApiClient);
+        PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionTypeMessage(ActionType.NONE, mGoogleApiClient);
         pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
             @Override
             public void onResult(DataApi.DataItemResult dataItemsResult) {
@@ -150,6 +154,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Message.sendActionTypeMessage(actionType, mGoogleApiClient);
     }
 
+    private void sendInteractionType() {
+        int interactionType = InteractionType.NONE;
+        if (mDrone != null) {
+            if (mDrone instanceof ParrotFlyingDrone) {
+                interactionType = InteractionType.ACTION | InteractionType.JOYSTICK;
+            } else if (mDrone instanceof ParrotJumpingDrone) {
+                interactionType = InteractionType.ACTION;
+            }
+        }
+
+        Message.sendInteractionTypeMessage(interactionType, mGoogleApiClient);
+    }
+
     //region ParrotDroneListener
     @Override
     public void onDroneConnectionChanged(ARCONTROLLER_DEVICE_STATE_ENUM state) {
@@ -159,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 mConnectionTextView.setText(String.format(getString(R.string.device_connected), mDrone.getName()));
                 mWifiTextView.setVisibility(View.VISIBLE);
                 mPilotingTextView.setVisibility(View.VISIBLE);
+                sendInteractionType();
                 break;
             case ARCONTROLLER_DEVICE_STATE_STOPPED:
                 synchronized (mDroneLock) {
@@ -175,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onDroneActionChanged(int action) {
         switch (action) {
-            case ActionType.ACTION_TYPE_LAND:
+            case ActionType.LAND:
                 mEmergencyBt.setVisibility(View.VISIBLE);
                 break;
             default:
@@ -188,7 +206,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onDroneWifiBandChanged(int band) {
-        Log.e(TAG, "Wifi band received = " + band);
         switch (band) {
             case ParrotDrone.WIFI_BAND_2_4GHZ:
                 mWifiTextView.setText(R.string.wifi_band_2ghz);
@@ -328,6 +345,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                         }
                         break;
+                    case JOYSTICK:
+                        synchronized (mDroneLock) {
+                            if (mDrone != null) {
+                                mDrone.stopPiloting();
+                            }
+
+                        }
+                        break;
                 }
             } else if (event.getType() == DataEvent.TYPE_CHANGED) {
                 switch (messageType) {
@@ -337,6 +362,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                 AccelerometerData accelerometerData = Message.decodeAcceleroMessage(dataItem);
                                 if (accelerometerData != null) {
                                     mDrone.pilotWithAcceleroData(accelerometerData);
+                                } else {
+                                    mDrone.stopPiloting();
+                                }
+                            }
+
+                        }
+                        break;
+                    case JOYSTICK:
+                        synchronized (mDroneLock) {
+                            if (mDrone != null) {
+                                JoystickData joystickData = Message.decodeJoystickMessage(dataItem);
+                                if (joystickData != null) {
+                                    mDrone.pilotWithJoystickData(joystickData);
                                 } else {
                                     mDrone.stopPiloting();
                                 }
@@ -364,6 +402,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (mDrone != null) {
             Message.sendActionTypeMessage(mDrone.getCurrentAction(), mGoogleApiClient);
         }
+        sendInteractionType();
     }
 
     @Override
