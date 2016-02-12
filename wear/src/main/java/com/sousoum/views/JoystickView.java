@@ -35,6 +35,7 @@ public class JoystickView extends LinearLayout {
     private PointF mJoystick;
     private float mRadius;
     private float mJoystickRadius;
+    private float mJoystickCenterRadius;    // mRadius - mJoystickRadius. only here to avoid calculation
 
     public JoystickView(Context context) {
         super(context);
@@ -73,6 +74,13 @@ public class JoystickView extends LinearLayout {
         this.setWillNotDraw(false);
     }
 
+    private void setJoystickPosition(float x, float y) {
+        mJoystick.x = x;
+        mJoystick.y = y;
+        invalidate();
+        notifyValuesUpdated();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -82,6 +90,8 @@ public class JoystickView extends LinearLayout {
         mJoystick.x = mCenter.x;
         mJoystick.y = mCenter.y;
         mRadius = (getMeasuredWidth() / 2.f) - CIRCLE_EXTERNAL_PADDING;
+
+        mJoystickCenterRadius = mRadius - mJoystickRadius;
     }
 
     @Override
@@ -99,10 +109,7 @@ public class JoystickView extends LinearLayout {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 if(isPointInsideCircle(event.getX(), event.getY())) {
-                    mJoystick.x = event.getX();
-                    mJoystick.y = event.getY();
-                    invalidate();
-                    notifyValuesUpdated();
+                    setJoystickPosition(event.getX(), event.getY());
                 } else {
                     // if pointed down outside the circle, don't do anything
                     result = false;
@@ -111,28 +118,22 @@ public class JoystickView extends LinearLayout {
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(isPointInsideCircle(event.getX(), event.getY())) {
-                    mJoystick.x = event.getX();
-                    mJoystick.y = event.getY();
-                    invalidate();
+                    setJoystickPosition(event.getX(), event.getY());
                 } else {
                     // if pointed down outside the circle, put the point on the edge of the circle
                     float vX = event.getX() - mCenter.x;
                     float vY = event.getY() - mCenter.y;
                     float magV = (float) Math.sqrt(vX * vX + vY * vY);
-                    mJoystick.x = mCenter.x + vX / magV * (mRadius - mJoystickRadius);
-                    mJoystick.y = mCenter.y + vY / magV * (mRadius - mJoystickRadius);
-                    invalidate();
-                    notifyValuesUpdated();
+                    setJoystickPosition(
+                            mCenter.x + vX / magV * mJoystickCenterRadius,
+                            mCenter.y + vY / magV * mJoystickCenterRadius);
                 }
 
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 // put the joystick back on the center
-                mJoystick.x = mCenter.x;
-                mJoystick.y = mCenter.y;
-                invalidate();
-                notifyValuesUpdated();
+                setJoystickPosition(mCenter.x, mCenter.y);
                 break;
             default:
                 result = false;
@@ -150,7 +151,7 @@ public class JoystickView extends LinearLayout {
     }
 
     private boolean isPointInsideCircle(float x, float y) {
-        return (Math.pow(x - mCenter.x, 2) + Math.pow(y - mCenter.y, 2) < Math.pow(mRadius - mJoystickRadius, 2));
+        return (Math.pow(x - mCenter.x, 2) + Math.pow(y - mCenter.y, 2) < Math.pow(mJoystickCenterRadius, 2));
     }
 
     public void addListener(JoystickListener listener) {
@@ -162,8 +163,8 @@ public class JoystickView extends LinearLayout {
     }
 
     private void notifyValuesUpdated() {
-        float percentX = (mJoystick.x - mCenter.x) / (mRadius - mJoystickRadius);
-        float percentY = -(mJoystick.y - mCenter.y) / (mRadius - mJoystickRadius);
+        float percentX = (mJoystick.x - mCenter.x) / mJoystickCenterRadius;
+        float percentY = -(mJoystick.y - mCenter.y) / mJoystickCenterRadius;
         List<JoystickListener> listenersCpy = new ArrayList<>(mListeners);
         for (JoystickListener listener : listenersCpy) {
             listener.onValuesUpdated(percentX, percentY);

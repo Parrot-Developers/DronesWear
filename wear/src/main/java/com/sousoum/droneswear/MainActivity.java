@@ -302,6 +302,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     case INTERACTION_TYPE:
                         int interactionType = Message.decodeInteractionTypeMessage(dataItem);
                         onInteractionTypeChanged(interactionType);
+                        break;
                 }
 
             }
@@ -325,6 +326,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                             case ACTION_TYPE:
                                 int productAction = Message.decodeActionTypeMessage(dataItem);
                                 onActionTypeChanged(productAction);
+                                break;
+                            case INTERACTION_TYPE:
+                                int interactionType = Message.decodeInteractionTypeMessage(dataItem);
+                                onInteractionTypeChanged(interactionType);
                                 break;
                         }
                     }
