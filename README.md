@@ -21,16 +21,16 @@ For the moment, you can control these drones:
 On the flying drones, you can take off and land, 
 and also control the drone on pitch and roll 
 (make them fly forward, backward, on left and right).
-On the handheld device, you can at any time stop the propellers 
-in case of emergency.
+
+You can also use the joystick to control the drone orientation and altitude (up and down for altitude, left and right for orientation).
+
+On the handheld device, you can at any time stop the propellers in case of emergency.
 
 ###Jumping drones
 You can pilot the jumping drones with the watch. You can also make them jump.
 
 ##Security
-At any time, you can stop piloting the drone with the *pilot from wear* switch button 
-on your phone. Switching it off will make the flying drones hover 
-and the jumping ones stop moving.
+At any time, you can stop piloting the drone with the *pilot from wear* switch button on your phone. Switching it off will make the flying drones hover and the jumping ones stop moving.
 
 ##Usage
 1. Connect your phone to the drone's Wifi. <br/>
