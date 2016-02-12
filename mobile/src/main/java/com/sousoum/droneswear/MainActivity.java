@@ -18,6 +18,8 @@ import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.parrot.arsdk.ARSDK;
 import com.parrot.arsdk.arcontroller.ARCONTROLLER_DEVICE_STATE_ENUM;
@@ -403,6 +405,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Message.sendActionTypeMessage(mDrone.getCurrentAction(), mGoogleApiClient);
         }
         sendInteractionType();
+
+        // launch the app on the wear
+        Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+            @Override
+            public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
+                for (Node node : getConnectedNodesResult.getNodes()) {
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient , node.getId() , Message.OPEN_ACTIVITY_MESSAGE , new byte[0]);
+                }
+            }
+        });
     }
 
     @Override

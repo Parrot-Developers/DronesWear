@@ -16,6 +16,7 @@ import com.google.android.gms.wearable.Wearable;
  */
 public class Message
 {
+    public static final String OPEN_ACTIVITY_MESSAGE = "/open_app";
     private static final String ACC_PATH = "/acc";
     private static final String JOYSTICK_PATH = "/joy";
     private static final String INTERACTION_TYPE_PATH = "/it";
