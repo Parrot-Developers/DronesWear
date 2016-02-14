@@ -16,6 +16,7 @@ import com.parrot.arsdk.arcontroller.ARDeviceControllerListener;
 import com.parrot.arsdk.arcontroller.ARFeatureCommon;
 import com.parrot.arsdk.ardiscovery.ARDISCOVERY_PRODUCT_ENUM;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDevice;
+import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceBLEService;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceNetService;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
 import com.parrot.arsdk.ardiscovery.ARDiscoveryException;
@@ -68,10 +69,13 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
     protected int mCurrentAction;
     protected String mName;
 
+    private final Context mContext;
+
     public ParrotDrone(@NonNull ARDiscoveryDeviceService deviceService, Context ctx) {
 
         mListeners = new ArrayList<>();
         mHandler = new Handler(ctx.getMainLooper());
+        mContext = ctx;
 
         ARDiscoveryDevice discoveryDevice = createDiscoveryDevice(deviceService);
         ARDeviceController deviceController = null;
@@ -134,10 +138,16 @@ public abstract class ParrotDrone implements ARDeviceControllerListener {
         try {
             device = new ARDiscoveryDevice();
 
-            ARDiscoveryDeviceNetService netDeviceService = (ARDiscoveryDeviceNetService) service.getDevice();
             ARDISCOVERY_PRODUCT_ENUM productType = ARDiscoveryService.getProductFromProductID(service.getProductID());
 
-            device.initWifi(productType, netDeviceService.getName(), netDeviceService.getIp(), netDeviceService.getPort());
+            if (service.getDevice() instanceof ARDiscoveryDeviceNetService) {
+                ARDiscoveryDeviceNetService netDeviceService = (ARDiscoveryDeviceNetService)service.getDevice();
+                device.initWifi(productType, netDeviceService.getName(), netDeviceService.getIp(), netDeviceService.getPort());
+            } else if (service.getDevice() instanceof ARDiscoveryDeviceBLEService) {
+                ARDiscoveryDeviceBLEService bleDeviceService = (ARDiscoveryDeviceBLEService) service.getDevice();
+                device.initBLE(productType, mContext.getApplicationContext(), bleDeviceService.getBluetoothDevice());
+            }
+
         } catch (ARDiscoveryException e) {
             e.printStackTrace();
             Log.e(TAG, "Error: " + e.getError());

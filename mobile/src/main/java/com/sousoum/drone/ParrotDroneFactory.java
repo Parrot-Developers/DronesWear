@@ -14,10 +14,13 @@ public class ParrotDroneFactory {
         ParrotDrone drone = null;
         switch (ARDiscoveryService.getProductFamily(ARDiscoveryService.getProductFromProductID(deviceService.getProductID()))) {
             case ARDISCOVERY_PRODUCT_FAMILY_ARDRONE:
-                drone = new ParrotFlyingDrone(deviceService, ctx);
+                drone = new ParrotBebopDrone(deviceService, ctx);
                 break;
             case ARDISCOVERY_PRODUCT_FAMILY_JS:
                 drone = new ParrotJumpingDrone(deviceService, ctx);
+                break;
+            case ARDISCOVERY_PRODUCT_FAMILY_MINIDRONE:
+                drone = new ParrotMiniDrone(deviceService, ctx);
                 break;
         }
 

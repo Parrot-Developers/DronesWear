@@ -93,7 +93,7 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
         if (mArdiscoveryService != null) {
             Log.i(TAG, "Start discovering");
             onServicesDevicesListUpdated();
-            mArdiscoveryService.startWifiDiscovering();
+            mArdiscoveryService.start();
             mHandler.postDelayed(mTimeoutRunnable, TIMEOUT_DELAY_MS);
         }
     }
@@ -101,7 +101,7 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
     public void stopDiscovering() {
         if (mArdiscoveryService != null) {
             Log.i(TAG, "Stop discovering");
-            mArdiscoveryService.stopWifiDiscovering();
+            mArdiscoveryService.stop();
             mHandler.removeCallbacks(mTimeoutRunnable);
         }
     }
@@ -175,9 +175,11 @@ public class Discoverer implements ARDiscoveryServicesDevicesListUpdatedReceiver
                     Log.i(TAG, "service :  " + service + " name = " + service.getName());
                     final ARDISCOVERY_PRODUCT_ENUM product = ARDiscoveryService.getProductFromProductID(service.getProductID());
                     Log.i(TAG, "product :  " + product);
-                    // only display drones from family Bebop and Jumping
-                    if (ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_JS.equals(ARDiscoveryService.getProductFamily(product)) ||
-                            ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_ARDRONE.equals(ARDiscoveryService.getProductFamily(product))) {
+                    ARDISCOVERY_PRODUCT_FAMILY_ENUM family = ARDiscoveryService.getProductFamily(product);
+                    // only display drones from family Bebop, Jumping and MiniDrone (RollingSpider)
+                    if (ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_JS.equals(family) ||
+                            ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_MINIDRONE.equals(family) ||
+                            ARDISCOVERY_PRODUCT_FAMILY_ENUM.ARDISCOVERY_PRODUCT_FAMILY_ARDRONE.equals(family)) {
                         final ARDiscoveryDeviceService serviceFinal = service;
                         mHandler.removeCallbacks(mTimeoutRunnable);
                         mHandler.post(new Runnable() {

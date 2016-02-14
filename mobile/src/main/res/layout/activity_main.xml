@@ -47,7 +47,6 @@
             android:textAlignment="center"
             android:layout_marginTop="40dp"
             android:textSize="18sp"
-            android:text="@string/wifi_band_2ghz"
             android:textColor="@color/secondary_text"
             android:visibility="gone"/>
 
