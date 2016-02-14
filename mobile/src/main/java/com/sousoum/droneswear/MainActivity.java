@@ -187,6 +187,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 mConnectionTextView.setText(R.string.device_disconnected);
                 mWifiTextView.setVisibility(View.GONE);
                 mPilotingTextView.setVisibility(View.GONE);
+                sendInteractionType();
+                sendActionType(ActionType.NONE);
                 mHandler.postDelayed(mReconnectRunnable, 5000);
                 break;
         }
