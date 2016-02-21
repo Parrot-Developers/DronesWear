@@ -7,13 +7,16 @@ with your Android wear device (and its handheld device).
 It is available on the [Play Store](https://play.google.com/store/apps/details?id=com.sousoum.droneswear).
 
 ##Supported Parrot drones
-For the moment, you can control these drones:
+You can control these drones:
 
 - Bebop
 - Bebop 2
 - Jumping Sumo
 - Jumping Race
 - Jumping Night
+- Rolling Spider
+- Airborne Night
+- Airborne Cargo
 
 ##Interactions
 
