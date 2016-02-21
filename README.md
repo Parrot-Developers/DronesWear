@@ -52,4 +52,5 @@ If you need to ask questions about the SDK: [http://forum.developer.parrot.com/]
 
 ##Credit
 This project has been created and is maintained by Djavan Bertrand. <br/>
-Parrot is assuming no responsability on this code.
+
+Parrot is assuming no responsibility on this code.
