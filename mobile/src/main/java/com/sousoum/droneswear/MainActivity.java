@@ -144,9 +144,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 permissionsToRequest.add(permission);
             }
         }
-        ActivityCompat.requestPermissions(this,
-                permissionsToRequest.toArray(new String[permissionsToRequest.size()]),
-                REQUEST_CODE_PERMISSIONS_REQUEST);
+        if (permissionsToRequest.size() > 0) {
+            ActivityCompat.requestPermissions(this,
+                    permissionsToRequest.toArray(new String[permissionsToRequest.size()]),
+                    REQUEST_CODE_PERMISSIONS_REQUEST);
+        }
     }
 
     @Override
