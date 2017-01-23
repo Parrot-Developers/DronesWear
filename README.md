@@ -17,6 +17,7 @@ You can control these drones:
 - Rolling Spider
 - Airborne Night
 - Airborne Cargo
+- Mambo
 
 ##Interactions
 

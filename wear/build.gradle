@@ -23,7 +23,7 @@ android {
         }
         wear2 {
             minSdkVersion 24
-            versionCode = 8
+            versionCode = 20000002
         }
     }
 
