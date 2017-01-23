@@ -1,8 +1,13 @@
 package com.sousoum.droneswear;
 
+import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -10,6 +15,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -38,11 +44,16 @@ import com.sousoum.shared.JoystickData;
 import com.sousoum.shared.Message;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, Discoverer.DiscovererListener, ParrotDrone.ParrotDroneListener {
     private static final String TAG = "MobileMainActivity";
 
     private static final int ALPHA_ANIM_DURATION = 500;
+
+    /** Code for permission request result handling. */
+    private static final int REQUEST_CODE_PERMISSIONS_REQUEST = 1;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -63,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     static {
         ARSDK.loadSDKLibs();
-        ARSALPrint.setMinimumLogLevel(ARSAL_PRINT_LEVEL_ENUM.ARSAL_PRINT_ERROR);
+        ARSALPrint.setMinimumLogLevel(ARSAL_PRINT_LEVEL_ENUM.ARSAL_PRINT_VERBOSE);
     }
 
     private boolean mUseWatchAccelero;
@@ -120,6 +131,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 }
             }
         };
+
+        Set<String> permissionsToRequest = new HashSet<>();
+        String permission = Manifest.permission.ACCESS_COARSE_LOCATION;
+        if (ContextCompat.checkSelfPermission(this, permission) !=
+                PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+                Toast.makeText(this, "Please allow permission " + permission, Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            } else {
+                permissionsToRequest.add(permission);
+            }
+        }
+        ActivityCompat.requestPermissions(this,
+                permissionsToRequest.toArray(new String[permissionsToRequest.size()]),
+                REQUEST_CODE_PERMISSIONS_REQUEST);
     }
 
     @Override
@@ -151,6 +178,28 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mConnectionTextView.setText(R.string.discovering);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        boolean denied = false;
+        if (permissions.length == 0) {
+            // canceled, finish
+            denied = true;
+        } else {
+            for (int i = 0; i < permissions.length; i++) {
+                if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                    denied = true;
+                }
+            }
+        }
+
+        if (denied) {
+            Toast.makeText(this, "At least one permission is missing.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
 
     private void sendActionType(int actionType) {
         Message.sendActionTypeMessage(actionType, mGoogleApiClient);
