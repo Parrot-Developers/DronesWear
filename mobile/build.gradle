@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.1"
 
     defaultConfig {
         applicationId "com.sousoum.droneswear"
         minSdkVersion 21
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
     }
@@ -24,7 +24,7 @@ dependencies {
     wearApp project(path: ':wear', configuration: 'wear1Release')
     compile project(':shared')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile 'com.google.android.gms:play-services-wearable:10.0.1'
-    compile 'com.parrot:arsdk:3.11.0'
+    compile 'com.android.support:appcompat-v7:26.0.0'
+    compile 'com.google.android.gms:play-services-wearable:11.0.4'
+    compile 'com.parrot:arsdk:3.12.6'
 }

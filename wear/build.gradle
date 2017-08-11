@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.1"
 
     // Allows you to reference product flavors in your
     // phone module's build.gradle file
@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId "com.sousoum.droneswear"
         minSdkVersion 23
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
     }
@@ -37,7 +37,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.google.android.support:wearable:1.4.0'
-    compile 'com.google.android.gms:play-services-wearable:10.0.1'
+    compile 'com.android.support:wear:26.0.0'
+    compile 'com.google.android.support:wearable:2.0.4'
+    provided 'com.google.android.wearable:wearable:2.0.4'
+    compile 'com.google.android.gms:play-services-wearable:11.0.4'
     compile project(':shared')
 }
