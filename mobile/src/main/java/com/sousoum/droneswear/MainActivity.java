@@ -176,8 +176,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         mGoogleApiClient.connect();
 
-        mDiscoverer.setup();
-        mConnectionTextView.setText(R.string.discovering);
+        synchronized (mDroneLock) {
+            if (mDrone == null) {
+                mDiscoverer.setup();
+                mConnectionTextView.setText(R.string.discovering);
+            }
+        }
     }
 
     @Override
