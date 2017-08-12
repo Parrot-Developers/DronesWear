@@ -85,18 +85,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mTimeoutHelper = findViewById(R.id.timeout_helper);
-        mConnectionTextView = (TextView) findViewById(R.id.connection_text_view);
-        mWifiTextView = (TextView) findViewById(R.id.wifi_text_view);
-        mPilotingTextView = (TextView) findViewById(R.id.piloting_text_view);
+        mConnectionTextView = findViewById(R.id.connection_text_view);
+        mWifiTextView = findViewById(R.id.wifi_text_view);
+        mPilotingTextView = findViewById(R.id.piloting_text_view);
 
-        mAcceleroSwitch = (Switch) findViewById(R.id.acceleroSwitch);
+        mAcceleroSwitch = findViewById(R.id.acceleroSwitch);
         mAcceleroSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 onAcceleroSwitchCheckChanged();
             }
         });
-        mEmergencyBt = (Button) findViewById(R.id.emergencyBt);
+        mEmergencyBt = findViewById(R.id.emergencyBt);
         mEmergencyBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         });
 
         mUseWatchAccelero = false;
-        mAcceleroSwitch.setChecked(mUseWatchAccelero);
+        mAcceleroSwitch.setChecked(false);
         updatePilotingText();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addApi(Wearable.API).build();
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionTypeMessage(ActionType.NONE, mGoogleApiClient);
         pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
             @Override
-            public void onResult(DataApi.DataItemResult dataItemsResult) {
+            public void onResult(@NonNull DataApi.DataItemResult dataItemsResult) {
                 if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
                     Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
                     mGoogleApiClient.disconnect();
@@ -460,11 +460,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         sendInteractionType();
 
         // launch the app on the wear
-        Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+        Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(
+                new ResultCallback<NodeApi.GetConnectedNodesResult>() {
             @Override
-            public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
+            public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
                 for (Node node : getConnectedNodesResult.getNodes()) {
-                    Wearable.MessageApi.sendMessage(mGoogleApiClient , node.getId() , Message.OPEN_ACTIVITY_MESSAGE , new byte[0]);
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(),
+                            Message.OPEN_ACTIVITY_MESSAGE, new byte[0]);
                 }
             }
         });

@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.wearable.activity.ConfirmationActivity;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
@@ -41,7 +42,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends WearableActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, JoystickView.JoystickListener {
+public class MainActivity extends WearableActivity implements SensorEventListener,
+        GoogleApiClient.ConnectionCallbacks, DataApi.DataListener, JoystickView.JoystickListener {
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
             new SimpleDateFormat("HH:mm", Locale.US);
@@ -82,16 +84,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mShowAction = false;
         mShowJoystick = false;
 
-        mContainerView = (BoxInsetLayout) findViewById(R.id.container);
-        mGridViewPager = (GridViewPager) findViewById(R.id.gridViewPager);
-        mDotsPageIndicator = (DotsPageIndicator) findViewById(R.id.dotsPageIndicator);
+        mContainerView = findViewById(R.id.container);
+        mGridViewPager = findViewById(R.id.gridViewPager);
+        mDotsPageIndicator = findViewById(R.id.dotsPageIndicator);
         mAdapter = new DWGridPagerAdapter(this);
         mGridViewPager.setAdapter(mAdapter);
         mDotsPageIndicator.setPager(mGridViewPager);
         mDotsPageIndicator.setOnPageChangeListener(mAdapter);
 
-        mClockView = (TextView) findViewById(R.id.clock);
-        mTextview = (TextView) findViewById(R.id.textview);
+        mClockView = findViewById(R.id.clock);
+        mTextview = findViewById(R.id.textview);
 
         mCurrentAction = ActionType.NONE;
 
@@ -135,12 +137,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         if (pendingResult != null) {
             pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>() {
                 @Override
-                public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult) {
+                public void onResult(@NonNull DataApi.DeleteDataItemsResult deleteDataItemsResult) {
                     PendingResult<DataApi.DeleteDataItemsResult> pendingResult = Message.sendEmptyJoystickMessage(mGoogleApiClient);
                     if (pendingResult != null) {
                         pendingResult.setResultCallback(new ResultCallback<DataApi.DeleteDataItemsResult>() {
                             @Override
-                            public void onResult(DataApi.DeleteDataItemsResult deleteDataItemsResult) {
+                            public void onResult(@NonNull DataApi.DeleteDataItemsResult deleteDataItemsResult) {
                                 if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
                                     Wearable.DataApi.removeListener(mGoogleApiClient, MainActivity.this);
                                     mGoogleApiClient.disconnect();
@@ -252,7 +254,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         PendingResult<DataApi.DataItemResult> pendingResult = Message.sendActionMessage(mGoogleApiClient);
         pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
             @Override
-            public void onResult(DataApi.DataItemResult dataItemResult) {
+            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                 Message.emptyActionMessage(mGoogleApiClient);
             }
         });
@@ -319,22 +321,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         PendingResult<DataItemBuffer> results = Wearable.DataApi.getDataItems(mGoogleApiClient);
         results.setResultCallback(new ResultCallback<DataItemBuffer>() {
             @Override
-            public void onResult(DataItemBuffer dataItems) {
-                if (dataItems != null) {
-                    for (DataItem dataItem : dataItems) {
-                        switch (Message.getMessageType(dataItem)) {
-                            case ACTION_TYPE:
-                                int productAction = Message.decodeActionTypeMessage(dataItem);
-                                onActionTypeChanged(productAction);
-                                break;
-                            case INTERACTION_TYPE:
-                                int interactionType = Message.decodeInteractionTypeMessage(dataItem);
-                                onInteractionTypeChanged(interactionType);
-                                break;
-                        }
+            public void onResult(@NonNull DataItemBuffer dataItems) {
+                for (DataItem dataItem : dataItems) {
+                    switch (Message.getMessageType(dataItem)) {
+                        case ACTION_TYPE:
+                            int productAction = Message.decodeActionTypeMessage(dataItem);
+                            onActionTypeChanged(productAction);
+                            break;
+                        case INTERACTION_TYPE:
+                            int interactionType = Message.decodeInteractionTypeMessage(dataItem);
+                            onInteractionTypeChanged(interactionType);
+                            break;
                     }
-                    dataItems.release();
                 }
+                dataItems.release();
             }
         });
     }
@@ -353,11 +353,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-    public class DWGridPagerAdapter extends GridPagerAdapter  implements GridViewPager.OnPageChangeListener  {
+    private class DWGridPagerAdapter extends GridPagerAdapter implements GridViewPager.OnPageChangeListener  {
 
         private final LayoutInflater mLayoutInflater;
 
-        public DWGridPagerAdapter(Context ctx) {
+        DWGridPagerAdapter(Context ctx) {
             mLayoutInflater = LayoutInflater.from(ctx);
         }
 
@@ -399,7 +399,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             final View actionView = mLayoutInflater.inflate(
                     R.layout.action_layout, container, false);
 
-            Button actionBt = (Button) actionView.findViewById(R.id.button);
+            Button actionBt = actionView.findViewById(R.id.button);
             actionBt.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
