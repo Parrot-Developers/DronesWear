@@ -118,8 +118,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             }
         };
-
-        mHandler.postDelayed(mSendAccRunnable, 500);
     }
 
     @Override
@@ -162,6 +160,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mManager.registerListener(this, mManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
 
         mGoogleApiClient.connect();
+
+        mHandler.removeCallbacksAndMessages(null);
+        mHandler.postDelayed(mSendAccRunnable, 500);
     }
 
     @Override
