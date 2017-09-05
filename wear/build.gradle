@@ -23,7 +23,10 @@ android {
         }
         wear2 {
             minSdkVersion 24
-            versionCode = 20000002
+            // naming is maj-min-patch-type-build-multiapkvar
+            // (with two digits for each -
+            // except type which is 0 for alpha, 1 for beta, 2 for release and build number which is 1 digit)
+            versionCode = 20100201
         }
     }
 
